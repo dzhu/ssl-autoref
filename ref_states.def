@@ -1,0 +1,8 @@
+XZ(REF_INIT),       // for doing some setup at the beginning
+X(REF_WAIT_START),  // at the beginning, wait for clients to connect and start moving their robots
+X(REF_WAIT_STOP),   // wait for robots to stop moving after the ball is placed
+X(REF_WAIT_KICK),   // wait for a kick to be taken
+X(REF_DELAY_WAIT),  // delay state to send a ref command for one frame, then go into WAIT_STOP
+X(REF_RUN),         // normal state while the game is in progress
+X(REF_BREAK),       // game is halted (e.g., halftime)
+X(NUM_REF_STATES)
