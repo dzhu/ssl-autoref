@@ -130,7 +130,7 @@ SSL_Referee EventAutoref::makeRefereeMessage()
   msg.set_stage(vars.stage);
   if (vars.stage == SSL_Referee::NORMAL_FIRST_HALF || vars.stage == SSL_Referee::NORMAL_SECOND_HALF
       || vars.stage == SSL_Referee::NORMAL_HALF_TIME) {
-    msg.set_stage_time_left((uint64_t)(1000000 * vars.stage_end) - time);
+    msg.set_stage_time_left(static_cast<uint64_t>(1000000 * vars.stage_end) - time);
   }
   else {
     msg.set_stage_time_left(0);

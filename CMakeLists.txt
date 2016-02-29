@@ -20,6 +20,7 @@ set (PROTO_FILES
   messages_robocup_ssl_geometry
   messages_robocup_ssl_wrapper
   referee
+  rcon
   )
 
 set (CC_PROTO)
@@ -55,6 +56,7 @@ add_executable (autoref
   autoref.cc
   events.cc
   touches.cc
+  rconclient.cc
   shared/tracker.cc
   shared/udp.cc
   shared/util.cc
