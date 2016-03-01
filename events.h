@@ -4,6 +4,8 @@
 #include <random>
 #include <vector>
 
+#include <stdarg.h>
+
 #include "referee.pb.h"
 
 #include "constants.h"
@@ -85,6 +87,16 @@ protected:
 
   const AutorefVariables &refVars() const;
 
+  string description;
+
+  void setDescription(const char *format, ...)
+  {
+    va_list al;
+    va_start(al, format);
+    description = StringFormat(format, al);
+    va_end(al);
+  }
+
 public:
   void process(const World &w, bool ball_z_valid, float ball_z)
   {
@@ -107,6 +119,11 @@ public:
   bool firingNew() const
   {
     return fired && !fired_last;
+  }
+
+  string getDescription() const
+  {
+    return description;
   }
 
   AutorefEvent(EventAutoref *_ref) : ref(_ref), fired(false), fired_last(false)
@@ -319,23 +336,6 @@ public:
   GoalScoredEvent(EventAutoref *_ref) : AutorefEvent(_ref), last_ball_loc(0, 0), cnt(0), lost_cnt(0), stop_cnt(0)
   {
     ball_history.init();
-  }
-};
-
-class DelayDoneEvent : public AutorefEvent
-{
-  uint32_t cnt;
-
-public:
-  static const char ID = 0;
-  void _process(const World &w, bool ball_z_valid, float ball_z);
-  const char *name() const
-  {
-    return "DelayDoneEvent";
-  }
-
-  DelayDoneEvent(EventAutoref *_ref) : AutorefEvent(_ref), cnt(0)
-  {
   }
 };
 

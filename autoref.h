@@ -1,10 +1,9 @@
 #pragma once
-#include <stdint.h>
+#include <cstdint>
 
 #include <deque>
 #include <map>
 
-// #include <google/protobuf/repeated_field.h>
 #include <google/protobuf/text_format.h>
 
 #include "messages_robocup_ssl_wrapper.pb.h"
@@ -15,6 +14,7 @@
 #include "touches.h"
 #include "tracker.h"
 
+using namespace std;
 using namespace google::protobuf;
 
 class EventAutoref

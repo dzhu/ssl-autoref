@@ -1,4 +1,5 @@
-#include <stdio.h>
+#include <cstdio>
+#include <ctime>
 
 #include "autoref.h"
 #include "events.h"
@@ -16,7 +17,6 @@ EventAutoref::EventAutoref()
   addEvent<BallStuckEvent>();
   addEvent<GoalScoredEvent>();
   addEvent<BallExitEvent>();
-  addEvent<DelayDoneEvent>();
   addEvent<KickTakenEvent>();
   addEvent<KickExpiredEvent>();
   addEvent<BallTouchedEvent>();
@@ -54,13 +54,19 @@ bool EventAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z)
     for (auto it = events.begin(); it < events.end(); ++it) {
       AutorefEvent *ev = *it;
       ev->process(w, ball_z_valid, ball_z);
-      if (ev->firingNew()) {
-        printf("\n%.3f event fired: %s\n", w.time, ev->name());
 
+      if (ev->firingNew()) {
         AutorefVariables new_vars = ev->getUpdate();
 
-        // print changed variables
-        {
+        char time_buf[256];
+        time_t tt = w.time;
+        tm* st = localtime(&tt);
+        strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", st);
+
+        // print detailed internal information about firing event
+        if (0) {
+          printf("\n%s.%03d event fired: %s\n", time_buf, (int)(1000 * (w.time - tt)), ev->name());
+
 #define PRINT_DIFF(format, field)                          \
   if (new_vars.field != vars.field) {                      \
     printf("-- " #field ": " format "\n", new_vars.field); \
@@ -89,8 +95,12 @@ bool EventAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z)
           PRINT_DIFF("%d", blue_side);
         }
 
+        // print readable updates
+        if (ev->getDescription().size() > 0) {
+          printf("\n%s \x1b[32;1m%s\x1b[m\n", time_buf, ev->getDescription().c_str());
+        }
         if (new_vars.reset) {
-          printf("\n\x1b[33;1mPlease move the ball to <%.0f,%.0f>!\x1b[m\n", V2COMP(new_vars.reset_loc));
+          printf("\n%s \x1b[33;1mPlease move the ball to <%.0f,%.0f>!\x1b[m\n", time_buf, V2COMP(new_vars.reset_loc));
         }
 
         vars = new_vars;

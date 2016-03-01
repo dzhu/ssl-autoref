@@ -1,4 +1,28 @@
+#include <stdarg.h>
+
 #include "util.h"
+
+const char *TeamName(int team)
+{
+  return team == TeamBlue ? "blue" : "yellow";
+}
+
+string StringFormat(const char *format, va_list al)
+{
+  va_list al2;
+  va_copy(al2, al);
+
+  int len = vsnprintf(NULL, 0, format, al) + 1;
+
+  char buf[len];
+
+  vsnprintf(buf, len, format, al2);
+
+  va_end(al);
+  va_end(al2);
+
+  return string(buf);
+}
 
 vector2f OutOfBoundsLoc(const vector2f &objectLoc, const vector2f &objectDir)
 {

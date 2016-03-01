@@ -1,11 +1,13 @@
 #pragma once
 
 #include <algorithm>
+#include <string>
 
 #include "constants.h"
 #include "gvector.h"
 
 using std::max;
+using std::string;
 
 struct tvec
 {
@@ -65,6 +67,10 @@ inline num1 bound(num1 x, num2 low, num2 high)
   }
   return x;
 }
+
+const char *TeamName(int team);
+
+string StringFormat(const char *format, va_list al);
 
 vector2f OutOfBoundsLoc(const vector2f &objectLoc, const vector2f &objectDir);
 

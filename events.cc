@@ -41,6 +41,7 @@ void InitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   vars.state = REF_WAIT_START;
   vars.reset = true;
   vars.reset_loc.set(0, 0);
+  setDescription("Autoref started", w.time);
 }
 
 const char RobotsStartedEvent::ID;
@@ -68,6 +69,7 @@ void RobotsStartedEvent::_process(const World &w, bool ball_z_valid, float ball_
     vars.reset = true;
     vars.reset_loc.set(0, 0);
     vars.state = REF_WAIT_STOP;
+    setDescription("Robots started moving");
   }
 }
 
@@ -107,10 +109,11 @@ void BallSpeedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
   if (fired) {
     vars.cmd = SSL_Referee::STOP;
-    vars.next_cmd = SSL_Referee::INDIRECT_FREE_BLUE;
+    vars.next_cmd = (vars.touch_team == TeamBlue) ? SSL_Referee::INDIRECT_FREE_YELLOW : SSL_Referee::INDIRECT_FREE_BLUE;
     vars.reset = true;
     vars.reset_loc = BoundToField(w.ball.loc, 100, true);
     vars.state = REF_WAIT_STOP;
+    setDescription("Ball kicked too fast by %s team", TeamName(vars.touch_team));
   }
 }
 
@@ -157,6 +160,7 @@ void BallStuckEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       vars.next_cmd = SSL_Referee::FORCE_START;
       vars.reset = true;
       vars.reset_loc = legalPosition(last_ball_loc);
+      setDescription("Ball got stuck during play");
     }
   }
 }
@@ -231,6 +235,7 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     vars.state = REF_WAIT_STOP;
     vars.reset = true;
     vars.reset_loc = pos;
+    setDescription("Ball exited at <%.0f,%.0f>, touched by %s team", V2COMP(out_loc), TeamName(vars.touch_team));
   }
 
   if (IsInField(ball_loc, -BallRadius, false)) {
@@ -247,6 +252,7 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     if (proc->proc(w, res)) {
       fired = true;
       vars.touch_team = res.team;
+      setDescription("Ball touched by %s team", TeamName(vars.touch_team));
     }
   }
   return;
@@ -292,8 +298,8 @@ void KickReadyEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
   if (fired) {
     vars.touch_team = TeamNone;
-
     vars.cmd = vars.next_cmd;
+    setDescription("Starting kick: %s", SSL_Referee::Command_Name(vars.cmd).c_str());
 
     // reset the desired kick location to the current location, in case it didn't get moved before timing out
     vars.reset_loc = w.ball.loc;
@@ -356,6 +362,7 @@ void KickTakenEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
   if (fired) {
     vars.state = REF_RUN;
+    setDescription("Kick taken");
   }
 }
 
@@ -369,6 +376,7 @@ void KickExpiredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     vars.reset = true;
     vars.state = REF_WAIT_STOP;
     vars.next_cmd = SSL_Referee::FORCE_START;
+    setDescription("Team took too long to take a kick");
   }
 }
 
@@ -425,26 +433,10 @@ void GoalScoredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
     vars.cmd = (scoring_team == TeamBlue) ? SSL_Referee::GOAL_BLUE : SSL_Referee::GOAL_YELLOW;
     vars.next_cmd = (scoring_team == TeamBlue) ? SSL_Referee::PREPARE_KICKOFF_YELLOW : SSL_Referee::PREPARE_KICKOFF_BLUE;
-    vars.state = REF_DELAY_WAIT;
+    vars.state = REF_WAIT_STOP;
     vars.reset = true;
     vars.reset_loc.set(0, 0);
-  }
-}
-
-const char DelayDoneEvent::ID;
-
-void DelayDoneEvent::_process(const World &w, bool ball_z_valid, float ball_z)
-{
-  if (vars.state != REF_DELAY_WAIT) {
-    cnt = 0;
-    return;
-  }
-
-  fired = cnt++ > 5;
-  if (fired) {
-    vars.state = REF_WAIT_STOP;
-    vars.cmd = SSL_Referee::STOP;
-    vars.reset = true;
+    setDescription("Goal scored by %s team", TeamName(scoring_team));
   }
 }
 
@@ -487,8 +479,9 @@ void LongDribbleEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       }
       d.last = true;
 
-      if (dist(r.loc, d.start_loc) > 500) {
+      if (dist(r.loc, d.start_loc) > 1000) {
         fired = true;
+        setDescription("Ball dribbled too far by robot %s-%X", TeamName(r.team), r.robot_id);
       }
     }
     else {
@@ -532,5 +525,6 @@ void StageTimeEndedEvent::_process(const World &w, bool ball_z_valid, float ball
 
     default: break;
   }
+  setDescription("Stage ended: %s", SSL_Referee::Stage_Name(vars.stage).c_str());
   vars.stage = NextStage(vars.stage);
 }
