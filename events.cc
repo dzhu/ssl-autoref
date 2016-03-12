@@ -431,12 +431,31 @@ void GoalScoredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     uint8_t scoring_team = (vars.blue_side * ball_loc.x > 0) ? TeamYellow : TeamBlue;
     vars.team[scoring_team].score++;
 
-    vars.cmd = (scoring_team == TeamBlue) ? SSL_Referee::GOAL_BLUE : SSL_Referee::GOAL_YELLOW;
-    vars.next_cmd = (scoring_team == TeamBlue) ? SSL_Referee::PREPARE_KICKOFF_YELLOW : SSL_Referee::PREPARE_KICKOFF_BLUE;
-    vars.state = REF_WAIT_STOP;
+    vars.cmd = SSL_Referee::STOP;
+    vars.kick_team = FlipTeam(scoring_team);
+    vars.state = REF_DELAY_GOAL;
     vars.reset = true;
     vars.reset_loc.set(0, 0);
     setDescription("Goal scored by %s team", TeamName(scoring_team));
+  }
+}
+
+const char DelayDoneEvent::ID;
+
+void DelayDoneEvent::_process(const World &w, bool ball_z_valid, float ball_z)
+{
+  if (vars.state != REF_DELAY_GOAL) {
+    cnt = 0;
+    return;
+  }
+
+  fired = cnt++ > 10;
+  if (fired) {
+    vars.state = REF_WAIT_STOP;
+    vars.cmd = (vars.kick_team == TeamBlue) ? SSL_Referee::GOAL_YELLOW : SSL_Referee::GOAL_BLUE;
+    vars.next_cmd = (vars.kick_team == TeamBlue) ? SSL_Referee::PREPARE_KICKOFF_BLUE : SSL_Referee::PREPARE_KICKOFF_YELLOW;
+    vars.reset = true;
+    vars.reset_loc.set(0, 0);
   }
 }
 

@@ -22,6 +22,7 @@ EventAutoref::EventAutoref()
   addEvent<BallStuckEvent>();
   addEvent<GoalScoredEvent>();
   addEvent<BallExitEvent>();
+  addEvent<DelayDoneEvent>();
   addEvent<KickTakenEvent>();
   addEvent<KickExpiredEvent>();
   addEvent<BallTouchedEvent>();
@@ -52,8 +53,6 @@ void EventAutoref::updateReferee(const SSL_Referee &r)
 {
   have_refbox = true;
   refbox_message = r;
-  vars.stage = r.stage();
-  vars.cmd = r.command();
 }
 
 bool EventAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z)

@@ -209,6 +209,23 @@ public:
   }
 };
 
+class DelayDoneEvent : public AutorefEvent
+{
+  int cnt;
+
+public:
+  static const char ID = 0;
+  void _process(const World &w, bool ball_z_valid, float ball_z);
+  const char *name() const
+  {
+    return "DelayDoneEvent";
+  }
+
+  DelayDoneEvent(EventAutoref *_ref) : AutorefEvent(_ref), cnt(0)
+  {
+  }
+};
+
 class BallExitEvent : public AutorefEvent
 {
   RunningQueue<tvec, 5> ball_history;
