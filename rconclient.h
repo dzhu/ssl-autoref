@@ -29,14 +29,18 @@ class RemoteClient
   bool recvFully(void *buffer, std::size_t length);
   bool sendFully(const void *buffer, std::size_t length);
 
-  uint32_t nextMessageID();
+  uint32_t nextMessageID;
 
-  void doRequest(const SSL_RefereeRemoteControlRequest &request);
+  SSL_RefereeRemoteControlRequest createMessage();
 
 public:
-  RemoteClient(const char *hostname, int port);
+  RemoteClient() : sock(0){};
+  bool open(const char *hostname, int port);
 
-  void doCard(SSL_RefereeRemoteControlRequest::CardInfo::CardType color, SSL_RefereeRemoteControlRequest::CardInfo::CardTeam team);
-  void doStage(SSL_Referee::Stage stage);
-  void doCommand(SSL_Referee::Command command);
+  void sendRequest(const SSL_RefereeRemoteControlRequest &request);
+
+  void sendCard(SSL_RefereeRemoteControlRequest::CardInfo::CardType color,
+                SSL_RefereeRemoteControlRequest::CardInfo::CardTeam team);
+  void sendStage(SSL_Referee::Stage stage);
+  void sendCommand(SSL_Referee::Command command);
 };

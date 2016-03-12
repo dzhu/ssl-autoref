@@ -9,9 +9,12 @@ EventAutoref::EventAutoref()
   have_geometry = false;
   game_on = false;
 
+  new_stage = new_cmd = false;
+
   addEvent<InitEvent>();
   addEvent<RobotsStartedEvent>();
-  addEvent<KickReadyEvent>();  // must be before anything that can transition from game-on to game-off, so it doesn't miss any
+  addEvent<KickReadyEvent>();  // must be before anything that can transition from game-on to game-off, so it
+                               // doesn't miss any
                                // transitions and can always reset properly
   addEvent<BallSpeedEvent>();
   addEvent<BallStuckEvent>();
@@ -49,6 +52,10 @@ bool EventAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z)
   bool ret = false;
 
   bool any_fired = true;
+
+  SSL_Referee::Stage last_stage = vars.stage;
+  SSL_Referee::Command last_command = vars.cmd;
+
   while (any_fired) {
     any_fired = false;
     for (auto it = events.begin(); it < events.end(); ++it) {
@@ -60,12 +67,12 @@ bool EventAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z)
 
         char time_buf[256];
         time_t tt = w.time;
-        tm* st = localtime(&tt);
+        tm *st = localtime(&tt);
         strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", st);
 
         // print detailed internal information about firing event
         if (0) {
-          printf("\n%s.%03d event fired: %s\n", time_buf, (int)(1000 * (w.time - tt)), ev->name());
+          printf("\n%s.%03d event fired: %s\n", time_buf, static_cast<int>(1000 * (w.time - tt)), ev->name());
 
 #define PRINT_DIFF(format, field)                          \
   if (new_vars.field != vars.field) {                      \
@@ -111,13 +118,22 @@ bool EventAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z)
       }
     }
   }
+
+  new_stage = (vars.stage != last_stage);
+  new_cmd = (vars.cmd != last_command);
+
   fflush(stdout);
   return ret;
 }
 
-bool EventAutoref::isReady()
+bool EventAutoref::isMessageReady()
 {
   return tracker.isReady();
+}
+
+bool EventAutoref::isRemoteReady()
+{
+  return new_cmd || new_stage;
 }
 
 void convertTeamInfo(const AutorefVariables::TeamInfo &in, SSL_Referee::TeamInfo &out)
@@ -131,7 +147,7 @@ void convertTeamInfo(const AutorefVariables::TeamInfo &in, SSL_Referee::TeamInfo
   out.set_goalie(0);  // TODO
 }
 
-SSL_Referee EventAutoref::makeRefereeMessage()
+SSL_Referee EventAutoref::makeMessage()
 {
   SSL_Referee msg;
   uint64_t time = GetTimeMicros();
@@ -153,5 +169,18 @@ SSL_Referee EventAutoref::makeRefereeMessage()
   convertTeamInfo(vars.team[TeamBlue], *(msg.mutable_blue()));
   convertTeamInfo(vars.team[TeamYellow], *(msg.mutable_yellow()));
 
+  return msg;
+}
+
+SSL_RefereeRemoteControlRequest EventAutoref::makeRemote()
+{
+  SSL_RefereeRemoteControlRequest msg;
+  msg.set_message_id(0);
+  if (new_cmd) {
+    msg.set_command(vars.cmd);
+  }
+  else if (new_stage) {
+    msg.set_stage(vars.stage);
+  }
   return msg;
 }

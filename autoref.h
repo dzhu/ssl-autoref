@@ -7,6 +7,7 @@
 #include <google/protobuf/text_format.h>
 
 #include "messages_robocup_ssl_wrapper.pb.h"
+#include "rcon.pb.h"
 #include "referee.pb.h"
 
 #include "constants.h"
@@ -45,10 +46,10 @@ class EventAutoref
     events.push_back(ev);
   }
 
+  bool new_stage, new_cmd;
+
 public:
   Tracker tracker;
-
-  SSL_Referee makeRefereeMessage();
 
   // timestamp from the last received world state
   double last_time;
@@ -80,7 +81,11 @@ public:
   }
 
   EventAutoref();
-  bool isReady();
+  bool isMessageReady();
+  bool isRemoteReady();
+
+  SSL_Referee makeMessage();
+  SSL_RefereeRemoteControlRequest makeRemote();
 
   void updateGeometry(const SSL_GeometryData &g);
   void updateVision(const SSL_DetectionFrame &d);

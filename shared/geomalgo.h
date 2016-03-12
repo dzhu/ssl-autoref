@@ -444,7 +444,8 @@ real ray_stretched_circle_intersect(vector rO, vector rV, vector sO, real sR, ve
 // X----|
 // |   |
 // /---
-// intersect a ray (r0+rV*t) with a stretched circle at s0 with end radii sR and 2*stretchH between its two centers
+// intersect a ray (r0+rV*t) with a stretched circle at s0 with end radii sR and 2*stretchH between its two
+// centers
 // returns: t, or -1 if no intersection
 // NOTE: rV is assumed to be normalized
 // yes, it's nasty code...but needed for the new defense area!

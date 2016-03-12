@@ -12,7 +12,7 @@ string StringFormat(const char *format, va_list al)
   va_list al2;
   va_copy(al2, al);
 
-  int len = vsnprintf(NULL, 0, format, al) + 1;
+  int len = vsnprintf(nullptr, 0, format, al) + 1;
 
   char buf[len];
 
