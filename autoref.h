@@ -20,8 +20,9 @@ using namespace google::protobuf;
 
 class EventAutoref
 {
-  bool have_geometry;
+  bool have_geometry, have_refbox;
   SSL_GeometryData geometry;
+  SSL_Referee refbox_message;
 
   bool game_on;
 
@@ -89,4 +90,5 @@ public:
 
   void updateGeometry(const SSL_GeometryData &g);
   void updateVision(const SSL_DetectionFrame &d);
+  void updateReferee(const SSL_Referee &r);
 };

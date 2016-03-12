@@ -68,6 +68,7 @@ int main(int argc, char *argv[])
       }
     }
     if (ref_net.recv(ref_msg)) {
+      autoref.updateReferee(ref_msg);
     }
   }
 }

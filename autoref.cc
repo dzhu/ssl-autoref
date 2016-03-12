@@ -6,10 +6,12 @@
 
 EventAutoref::EventAutoref()
 {
-  have_geometry = false;
+  have_geometry = have_refbox = false;
   game_on = false;
 
   new_stage = new_cmd = false;
+
+  cmd_counter = 0;
 
   addEvent<InitEvent>();
   addEvent<RobotsStartedEvent>();
@@ -46,8 +48,20 @@ void EventAutoref::updateVision(const SSL_DetectionFrame &d)
   }
 }
 
+void EventAutoref::updateReferee(const SSL_Referee &r)
+{
+  have_refbox = true;
+  refbox_message = r;
+  vars.stage = r.stage();
+  vars.cmd = r.command();
+}
+
 bool EventAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z)
 {
+  if (vars.state != REF_INIT && have_refbox && refbox_message.command() == SSL_Referee::HALT) {
+    return false;
+  }
+
   static int n = 0;
   bool ret = false;
 
@@ -176,6 +190,8 @@ SSL_RefereeRemoteControlRequest EventAutoref::makeRemote()
 {
   SSL_RefereeRemoteControlRequest msg;
   msg.set_message_id(0);
+  msg.set_last_command_counter(refbox_message.command_counter());
+
   if (new_cmd) {
     msg.set_command(vars.cmd);
   }
