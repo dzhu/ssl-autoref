@@ -5,16 +5,45 @@
 #include <sys/select.h>
 
 #include "autoref.h"
+#include "base_ref.h"
+#include "eval_ref.h"
 
 #include "constants.h"
 #include "messages_robocup_ssl_wrapper.pb.h"
+#include "optionparser.h"
 #include "rconclient.h"
 #include "referee.pb.h"
 #include "udp.h"
 
+enum OptionIndex
+{
+  UNKNOWN,
+  HELP,
+  VERBOSE,
+  EVAL,
+};
+
+const option::Descriptor options[] = {
+  {UNKNOWN, 0, "", "", option::Arg::None, "An automatic referee for the SSL."},    //
+  {HELP, 0, "h", "help", option::Arg::None, "-h, --help: print help"},             //
+  {VERBOSE, 0, "v", "verbose", option::Arg::None, "-v: verbose"},                  //
+  {EVAL, 0, "", "eval", option::Arg::None, "--eval: run using evaluation logic"},  //
+  {0, 0, 0, 0, 0, 0},
+};
+
 int main(int argc, char *argv[])
 {
-  puts("Autoref starting...");
+  argc -= (argc > 0);
+  argv += (argc > 0);  // skip program name argv[0] if present
+  option::Stats stats(options, argc, argv);
+  std::vector<option::Option> args(stats.options_max);
+  std::vector<option::Option> buffer(stats.buffer_max);
+  option::Parser parse(options, argc, argv, &args[0], &buffer[0]);
+
+  if (parse.error() || args[HELP] != nullptr || args[UNKNOWN] != nullptr) {
+    option::printUsage(std::cout, options);
+    return 0;
+  }
 
   UDP vision_net;
   if (!vision_net.open(VisionGroup, VisionPort, true)) {
@@ -29,12 +58,25 @@ int main(int argc, char *argv[])
   }
 
   RemoteClient rcon;
-  if (!rcon.open("localhost", 10007)) {
+  bool rcon_opened = true;
+  if (rcon.open("localhost", 10007)) {
+    puts("Remote client opened!");
+  }
+  else {
+    rcon_opened = false;
     puts("Remote client port open failed!");
-    exit(1);
   }
 
-  EventAutoref autoref;
+  bool verbose = (args[VERBOSE] != nullptr);
+  BaseAutoref *autoref;
+  if (args[EVAL]) {
+    puts("Starting evaluation autoref.");
+    autoref = new EvaluationAutoref(verbose);
+  }
+  else {
+    puts("Starting full autoref.");
+    autoref = new Autoref(verbose);
+  }
 
   // Address ref_addr(RefGroup, RefPort);
 
@@ -52,23 +94,25 @@ int main(int argc, char *argv[])
 
     if (vision_net.recv(vision_msg)) {
       if (vision_msg.has_detection()) {
-        autoref.updateVision(vision_msg.detection());
+        autoref->updateVision(vision_msg.detection());
 
         //// currently, we're not sending actual referee messages
-        // if (autoref.isMessageReady()) {
-        //   ref_net.send(autoref.makeMessage(), ref_addr);
+        // if (autoref->isMessageReady()) {
+        //   ref_net.send(autoref->makeMessage(), ref_addr);
         // }
 
-        if (autoref.isRemoteReady()) {
-          rcon.sendRequest(autoref.makeRemote());
+        if (autoref->isRemoteReady()) {
+          if (rcon_opened) {
+            rcon.sendRequest(autoref->makeRemote());
+          }
         }
       }
       if (vision_msg.has_geometry()) {
-        autoref.updateGeometry(vision_msg.geometry());
+        autoref->updateGeometry(vision_msg.geometry());
       }
     }
     if (ref_net.recv(ref_msg)) {
-      autoref.updateReferee(ref_msg);
+      autoref->updateReferee(ref_msg);
     }
   }
 }

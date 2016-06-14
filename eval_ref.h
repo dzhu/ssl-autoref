@@ -19,11 +19,11 @@
 
 using namespace google::protobuf;
 
-class Autoref : public BaseAutoref
+class EvaluationAutoref : public BaseAutoref
 {
   bool doEvents(const World &w, bool ball_z_valid = false, float ball_z = 0);
   bool verbose;
 
 public:
-  Autoref(bool verbose_);
+  EvaluationAutoref(bool verbose_);
 };

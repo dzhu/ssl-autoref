@@ -6,7 +6,6 @@ bool LineCheckProcessor::proc(const World &w, CollideResult &res)
   history.add(w);
 
   double t = w.time;
-  vector2f ball = w.ball.loc;
   if (w.ball.conf < .1) {
     return false;
   }

@@ -4,7 +4,7 @@
 #include <random>
 #include <vector>
 
-#include <stdarg.h>
+#include <cstdarg>
 
 #include "referee.pb.h"
 
@@ -14,14 +14,16 @@
 #include "util.h"
 #include "world.h"
 
+#include "referee.pb.h"
+
 using namespace std;
 
-class EventAutoref;
+class BaseAutoref;
 
-#define XZ(s) s = 0
-#define X(s) s
 enum RefGameState
 {
+#define XZ(s) s = 0
+#define X(s) s
 #include "ref_states.def"
 };
 
@@ -78,7 +80,7 @@ struct AutorefVariables
 class AutorefEvent
 {
 protected:
-  EventAutoref *ref;
+  BaseAutoref *ref;
   bool fired, fired_last;
 
   AutorefVariables vars;
@@ -126,13 +128,13 @@ public:
     return description;
   }
 
-  AutorefEvent(EventAutoref *_ref) : ref(_ref), fired(false), fired_last(false)
+  AutorefEvent(BaseAutoref *_ref) : ref(_ref), fired(false), fired_last(false)
   {
   }
 };
 
 // each subclass must define a static const char ID for use in the templated
-// retrieval by EventAutoref -- the value doesn't matter, only that the
+// retrieval by BaseAutoref -- the value doesn't matter, only that the
 // variable exists
 
 class InitEvent : public AutorefEvent
@@ -145,7 +147,24 @@ public:
     return "InitEvent";
   }
 
-  InitEvent(EventAutoref *_ref) : AutorefEvent(_ref)
+  InitEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
+  {
+  }
+};
+
+class RefboxUpdateEvent : public AutorefEvent
+{
+  SSL_Referee last_msg;
+
+public:
+  static const char ID = 0;
+  void _process(const World &w, bool ball_z_valid, float ball_z);
+  const char *name() const
+  {
+    return "RefboxUpdateEvent";
+  }
+
+  RefboxUpdateEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
   {
   }
 };
@@ -162,7 +181,7 @@ public:
     return "RobotsStartedEvent";
   }
 
-  RobotsStartedEvent(EventAutoref *_ref) : AutorefEvent(_ref), cnt(0)
+  RobotsStartedEvent(BaseAutoref *_ref) : AutorefEvent(_ref), cnt(0)
   {
   }
 };
@@ -182,7 +201,7 @@ public:
     return "BallSpeedEvent";
   }
 
-  BallSpeedEvent(EventAutoref *_ref) : AutorefEvent(_ref), cnt(0), last_loc(0, 0), last_time(0)
+  BallSpeedEvent(BaseAutoref *_ref) : AutorefEvent(_ref), cnt(0), last_loc(0, 0), last_time(0)
   {
   }
 };
@@ -204,7 +223,7 @@ public:
     return "BallStuckEvent";
   }
 
-  BallStuckEvent(EventAutoref *_ref) : AutorefEvent(_ref), stuck_count(0), wait_frames(0), last_ball_loc(0, 0)
+  BallStuckEvent(BaseAutoref *_ref) : AutorefEvent(_ref), stuck_count(0), wait_frames(0), last_ball_loc(0, 0)
   {
   }
 };
@@ -221,7 +240,7 @@ public:
     return "DelayDoneEvent";
   }
 
-  DelayDoneEvent(EventAutoref *_ref) : AutorefEvent(_ref), cnt(0)
+  DelayDoneEvent(BaseAutoref *_ref) : AutorefEvent(_ref), cnt(0)
   {
   }
 };
@@ -251,7 +270,7 @@ public:
     return binary_dist(generator) ? TeamYellow : TeamBlue;
   }
 
-  BallExitEvent(EventAutoref *_ref)
+  BallExitEvent(BaseAutoref *_ref)
       : AutorefEvent(_ref),
         last_ball_loc(0, 0),
         cnt(0),
@@ -276,7 +295,7 @@ public:
     return "BallTouchedEvent";
   }
 
-  BallTouchedEvent(EventAutoref *_ref) : AutorefEvent(_ref)
+  BallTouchedEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
   {
     // TODO add old accel-based processor
     procs.push_back(new BackTrackProcessor());
@@ -298,7 +317,7 @@ public:
     return "KickReadyEvent";
   }
 
-  KickReadyEvent(EventAutoref *_ref) : AutorefEvent(_ref), t0_bots(0), t0_ball(0)
+  KickReadyEvent(BaseAutoref *_ref) : AutorefEvent(_ref), t0_bots(0), t0_ball(0)
   {
   }
 };
@@ -313,7 +332,7 @@ public:
     return "KickTakenEvent";
   }
 
-  KickTakenEvent(EventAutoref *_ref) : AutorefEvent(_ref)
+  KickTakenEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
   {
   }
 };
@@ -328,7 +347,7 @@ public:
     return "KickExpiredEvent";
   }
 
-  KickExpiredEvent(EventAutoref *_ref) : AutorefEvent(_ref)
+  KickExpiredEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
   {
   }
 };
@@ -350,7 +369,7 @@ public:
     return "GoalScoredEvent";
   }
 
-  GoalScoredEvent(EventAutoref *_ref) : AutorefEvent(_ref), last_ball_loc(0, 0), cnt(0), lost_cnt(0), stop_cnt(0)
+  GoalScoredEvent(BaseAutoref *_ref) : AutorefEvent(_ref), last_ball_loc(0, 0), cnt(0), lost_cnt(0), stop_cnt(0)
   {
     ball_history.init();
   }
@@ -379,7 +398,7 @@ public:
     return "LongDribbleEvent";
   }
 
-  LongDribbleEvent(EventAutoref *_ref) : AutorefEvent(_ref)
+  LongDribbleEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
   {
   }
 };
@@ -394,7 +413,7 @@ public:
     return "StageTimeEndedEvent";
   }
 
-  StageTimeEndedEvent(EventAutoref *_ref) : AutorefEvent(_ref)
+  StageTimeEndedEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
   {
   }
 };

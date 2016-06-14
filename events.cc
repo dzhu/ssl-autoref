@@ -1,5 +1,6 @@
 #include "events.h"
-#include "autoref.h"
+#include <cinttypes>
+#include "base_ref.h"
 
 #undef XZ
 #undef X
@@ -12,12 +13,18 @@ const char *ref_state_names[] = {
 SSL_Referee::Stage NextStage(SSL_Referee::Stage s)
 {
   switch (s) {
-    case SSL_Referee::NORMAL_FIRST_HALF_PRE: return SSL_Referee::NORMAL_FIRST_HALF;
-    case SSL_Referee::NORMAL_FIRST_HALF: return SSL_Referee::NORMAL_HALF_TIME;
-    case SSL_Referee::NORMAL_HALF_TIME: return SSL_Referee::NORMAL_SECOND_HALF_PRE;
-    case SSL_Referee::NORMAL_SECOND_HALF_PRE: return SSL_Referee::NORMAL_SECOND_HALF;
-    case SSL_Referee::NORMAL_SECOND_HALF: return SSL_Referee::POST_GAME;
-    default: return SSL_Referee::POST_GAME;
+    case SSL_Referee::NORMAL_FIRST_HALF_PRE:
+      return SSL_Referee::NORMAL_FIRST_HALF;
+    case SSL_Referee::NORMAL_FIRST_HALF:
+      return SSL_Referee::NORMAL_HALF_TIME;
+    case SSL_Referee::NORMAL_HALF_TIME:
+      return SSL_Referee::NORMAL_SECOND_HALF_PRE;
+    case SSL_Referee::NORMAL_SECOND_HALF_PRE:
+      return SSL_Referee::NORMAL_SECOND_HALF;
+    case SSL_Referee::NORMAL_SECOND_HALF:
+      return SSL_Referee::POST_GAME;
+    default:
+      return SSL_Referee::POST_GAME;
   }
 }
 
@@ -44,6 +51,55 @@ void InitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   setDescription("Autoref started", w.time);
 }
 
+const char RefboxUpdateEvent::ID;
+
+void RefboxUpdateEvent::_process(const World &w, bool ball_z_valid, float ball_z)
+{
+  const SSL_Referee &msg = ref->getRefboxMessage();
+  if (msg.command() == last_msg.command()) {
+    return;
+  }
+
+  vars.cmd = msg.command();
+
+  switch (msg.command()) {
+    case SSL_Referee::HALT:
+    case SSL_Referee::TIMEOUT_YELLOW:
+    case SSL_Referee::TIMEOUT_BLUE:
+      vars.state = REF_BREAK;
+      break;
+
+    case SSL_Referee::FORCE_START:
+      vars.state = REF_RUN;
+      break;
+
+    case SSL_Referee::STOP:
+    case SSL_Referee::GOAL_YELLOW:
+    case SSL_Referee::GOAL_BLUE:
+    case SSL_Referee::BALL_PLACEMENT_YELLOW:
+    case SSL_Referee::BALL_PLACEMENT_BLUE:
+      vars.state = REF_WAIT_STOP;
+      break;
+
+    case SSL_Referee::DIRECT_FREE_YELLOW:
+    case SSL_Referee::DIRECT_FREE_BLUE:
+    case SSL_Referee::INDIRECT_FREE_YELLOW:
+    case SSL_Referee::INDIRECT_FREE_BLUE:
+    case SSL_Referee::PREPARE_KICKOFF_YELLOW:
+    case SSL_Referee::PREPARE_KICKOFF_BLUE:
+    case SSL_Referee::PREPARE_PENALTY_YELLOW:
+    case SSL_Referee::PREPARE_PENALTY_BLUE:
+    case SSL_Referee::NORMAL_START:
+      vars.reset_loc = w.ball.loc;
+      vars.state = REF_WAIT_KICK;
+      break;
+  }
+
+  fired = true;
+  setDescription("Got refbox command: %s", SSL_Referee::Command_Name(msg.command()).c_str());
+  last_msg = msg;
+}
+
 const char RobotsStartedEvent::ID;
 
 void RobotsStartedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
@@ -54,7 +110,7 @@ void RobotsStartedEvent::_process(const World &w, bool ball_z_valid, float ball_
 
   int seen = 0;
   for (const auto &r : w.robots) {
-    if (r.visible() && r.vel.length() > 50) {
+    if (r.visible() && r.vel.length() > 30) {
       seen |= (1 << r.team);
     }
   }
@@ -202,7 +258,6 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
   bool f = !IsInField(ball_loc + 0 * (ball_loc - last_ball_loc), -BallRadius, false);
 
-  // printf("%.3f %d %d %.3f %.3f\n", w.time, frames, f, V2COMP(ball_loc));
   if (f) {
     cnt++;
   }
@@ -270,7 +325,8 @@ void KickReadyEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   }
 
   if (vars.stage != SSL_Referee::NORMAL_FIRST_HALF_PRE && vars.stage != SSL_Referee::NORMAL_FIRST_HALF
-      && vars.stage != SSL_Referee::NORMAL_SECOND_HALF_PRE && vars.stage != SSL_Referee::NORMAL_SECOND_HALF) {
+      && vars.stage != SSL_Referee::NORMAL_SECOND_HALF_PRE
+      && vars.stage != SSL_Referee::NORMAL_SECOND_HALF) {
     return;
   }
   if (vars.state != REF_WAIT_STOP) {
@@ -330,7 +386,9 @@ void KickReadyEvent::_process(const World &w, bool ball_z_valid, float ball_z)
         vars.kick_deadline = w.time + KickDeadline;
         break;
 
-      case SSL_Referee::FORCE_START: vars.state = REF_RUN; break;
+      case SSL_Referee::FORCE_START:
+        vars.state = REF_RUN;
+        break;
 
       case SSL_Referee::PREPARE_KICKOFF_BLUE:
       case SSL_Referee::PREPARE_KICKOFF_YELLOW:
@@ -339,7 +397,8 @@ void KickReadyEvent::_process(const World &w, bool ball_z_valid, float ball_z)
         vars.state = REF_WAIT_STOP;
         break;
 
-      default: break;
+      default:
+        break;
     }
   }
 }
@@ -416,7 +475,8 @@ void GoalScoredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       vector2f b(ball_loc.x, fabs(ball_loc.y));
       vector2f h(ball_history[0].v.x, fabs(ball_history[0].v.y));
       // check if the hallucinated trajectory crosses a goal wall
-      if (segment_intersects(b, h, vector2f(FieldLengthH, GoalWidthH), vector2f(FieldLengthH + GoalDepth, GoalWidthH))) {
+      if (segment_intersects(
+            b, h, vector2f(FieldLengthH, GoalWidthH), vector2f(FieldLengthH + GoalDepth, GoalWidthH))) {
         return;
       }
     }
@@ -425,7 +485,8 @@ void GoalScoredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     ball_loc = w.ball.loc;
   }
 
-  fired = ((fabs(ball_loc.y) < GoalWidthH) && (fabs(ball_loc.x) > FieldLengthH) && (fabs(ball_loc.x) < FieldLengthH + GoalDepth));
+  fired = ((fabs(ball_loc.y) < GoalWidthH) && (fabs(ball_loc.x) > FieldLengthH)
+           && (fabs(ball_loc.x) < FieldLengthH + GoalDepth));
 
   if (fired) {
     uint8_t scoring_team = (vars.blue_side * ball_loc.x > 0) ? TeamYellow : TeamBlue;
@@ -453,7 +514,8 @@ void DelayDoneEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   if (fired) {
     vars.state = REF_WAIT_STOP;
     vars.cmd = (vars.kick_team == TeamBlue) ? SSL_Referee::GOAL_YELLOW : SSL_Referee::GOAL_BLUE;
-    vars.next_cmd = (vars.kick_team == TeamBlue) ? SSL_Referee::PREPARE_KICKOFF_BLUE : SSL_Referee::PREPARE_KICKOFF_YELLOW;
+    vars.next_cmd
+      = (vars.kick_team == TeamBlue) ? SSL_Referee::PREPARE_KICKOFF_BLUE : SSL_Referee::PREPARE_KICKOFF_YELLOW;
     vars.reset = true;
     vars.reset_loc.set(0, 0);
   }
@@ -542,7 +604,8 @@ void StageTimeEndedEvent::_process(const World &w, bool ball_z_valid, float ball
       vars.state = REF_BREAK;
       break;
 
-    default: break;
+    default:
+      break;
   }
   setDescription("Stage ended: %s", SSL_Referee::Stage_Name(vars.stage).c_str());
   vars.stage = NextStage(vars.stage);

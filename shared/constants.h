@@ -6,14 +6,14 @@ static const double TimeInHalf = 600;
 static const double TimeInHalftime = 300;
 static const double KickDeadline = 10;
 
-static const unsigned int MaxCameras = 4;
+static const int MaxCameras = 4;
 
-static const unsigned int TeamBlue = 0, TeamYellow = 1, TeamNone = 2;
-static const unsigned int NumTeams = 2;
+static const int TeamBlue = 0, TeamYellow = 1, TeamNone = 2;
+static const int NumTeams = 2;
 
-static const unsigned int MaxTeamRobots = 6;
-static const unsigned int MaxRobots = NumTeams * MaxTeamRobots;
-static const unsigned int MaxRobotIds = 16;
+static const int MaxTeamRobots = 6;
+static const int MaxRobots = NumTeams * MaxTeamRobots;
+static const int MaxRobotIds = 16;
 
 static const float MaxRobotRadius = 90;
 static const float BallRadius = 21;

@@ -2,8 +2,9 @@ cmake_minimum_required (VERSION 2.8)
 project (autoref)
 
 #### miscellaneous compile settings
-set (CMAKE_CXX_FLAGS "-std=c++11 -ggdb")
+set (CMAKE_CXX_FLAGS "-std=c++11 -ggdb -Werror")
 set (EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+set (CMAKE_EXPORT_COMPILE_COMMANDS on)
 file (MAKE_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
 
 include_directories (shared)
@@ -52,13 +53,15 @@ target_link_libraries (shared_protobuf protobuf)
 
 #### link main executable
 add_executable (autoref
-  autoref_main.cc
   autoref.cc
+  autoref_main.cc
+  base_ref.cc
+  eval_ref.cc
   events.cc
-  touches.cc
   rconclient.cc
   shared/tracker.cc
   shared/udp.cc
   shared/util.cc
+  touches.cc
   )
 target_link_libraries (autoref shared_protobuf)
