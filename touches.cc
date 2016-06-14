@@ -21,7 +21,8 @@ bool LineCheckProcessor::proc(const World &w, CollideResult &res)
   }
 
   // look for nearby robot
-  vector2f ball_pt = intersection(history[-5].ball.loc, history[-3].ball.loc, history[-2].ball.loc, history[0].ball.loc);
+  vector2f ball_pt
+    = intersection(history[-5].ball.loc, history[-3].ball.loc, history[-2].ball.loc, history[0].ball.loc);
 
   double closest_dist = HUGE_VALF;
   WorldRobot closest_robot;

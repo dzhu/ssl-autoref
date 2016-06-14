@@ -54,7 +54,10 @@ vector2d<num> point_near_line(const vector2d<num> x0, const vector2d<num> x1, co
 
 // returns nearest point on segment a0-a1 to line b0-b1
 template <class num>
-vector2d<num> segment_near_line(const vector2d<num> a0, const vector2d<num> a1, const vector2d<num> b0, const vector2d<num> b1)
+vector2d<num> segment_near_line(const vector2d<num> a0,
+                                const vector2d<num> a1,
+                                const vector2d<num> b0,
+                                const vector2d<num> b1)
 {
   vector2d<num> v, n, p;
   double dn, t;
@@ -89,7 +92,10 @@ bool segment_intersects(const vector2d<num> a1, const vector2d<num> a2, const ve
 }
 
 template <class num>
-vector2d<num> intersection(const vector2d<num> a1, const vector2d<num> a2, const vector2d<num> b1, const vector2d<num> b2)
+vector2d<num> intersection(const vector2d<num> a1,
+                           const vector2d<num> a2,
+                           const vector2d<num> b1,
+                           const vector2d<num> b2)
 {
   vector2d<num> a = a2 - a1;
 
@@ -287,7 +293,13 @@ double distance_seg_to_seg(vector s1a, vector s1b, vector s2a, vector s2b)
   float tc, tN, tD = D;     // tc = tN / tD, default tD = D >= 0
 
   if (false) {
-    printf("SegDist (%f,%f)-(%f,%f) to (%f,%f)-(%f,%f) a=%f b=%f\n", V2COMP(s1a), V2COMP(s1b), V2COMP(s2a), V2COMP(s2b), a, b);
+    printf("SegDist (%f,%f)-(%f,%f) to (%f,%f)-(%f,%f) a=%f b=%f\n",
+           V2COMP(s1a),
+           V2COMP(s1b),
+           V2COMP(s2a),
+           V2COMP(s2b),
+           a,
+           b);
   }
 
   if ((a < EPSILON) || (b < EPSILON)) {

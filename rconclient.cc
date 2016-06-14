@@ -101,8 +101,8 @@ void RemoteClient::sendRequest(const SSL_RefereeRemoteControlRequest &request)
     reply.ParseFromArray(&buffer[0], replyLength);
   }
   if (reply.message_id() != request.message_id()) {
-    std::cerr << "Reply message ID " << reply.message_id() << " does not match request message ID " << request.message_id()
-              << ".\n";
+    std::cerr << "Reply message ID " << reply.message_id() << " does not match request message ID "
+              << request.message_id() << ".\n";
   }
   std::cout << "Command result is: " << SSL_RefereeRemoteControlReply::Outcome_Name(reply.outcome()) << ".\n";
 }
@@ -128,7 +128,12 @@ bool RemoteClient::open(const char *hostname, int port)
   for (const addrinfo *i = refboxAddresses; i; i = i->ai_next) {
     char host_buf[256], port_buf[32];
     (reinterpret_cast<struct sockaddr_in *>(i->ai_addr))->sin_port = htons(port);
-    int err = getnameinfo(i->ai_addr, i->ai_addrlen, host_buf, sizeof(host_buf), port_buf, sizeof(port_buf),
+    int err = getnameinfo(i->ai_addr,
+                          i->ai_addrlen,
+                          host_buf,
+                          sizeof(host_buf),
+                          port_buf,
+                          sizeof(port_buf),
                           NI_NUMERICHOST | NI_NUMERICSERV);
     if (err != 0) {
       std::cerr << gai_strerror(err) << '\n';

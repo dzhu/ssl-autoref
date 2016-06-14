@@ -23,7 +23,8 @@ int Tracker::ObjectTracker::mergeObservations()
 vector2f Tracker::ObjectTracker::fitVelocity()
 {
   // TODO dedup
-  if (history.size() < VEL_SAMPLES || history[0].time - history[history.size() - 1].time > 2 * VEL_SAMPLES * FramePeriod) {
+  if (history.size() < VEL_SAMPLES
+      || history[0].time - history[history.size() - 1].time > 2 * VEL_SAMPLES * FramePeriod) {
     return vector2f(0, 0);
   }
 

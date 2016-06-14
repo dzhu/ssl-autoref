@@ -28,7 +28,7 @@ const option::Descriptor options[] = {
   {HELP, 0, "h", "help", option::Arg::None, "-h, --help: print help"},             //
   {VERBOSE, 0, "v", "verbose", option::Arg::None, "-v: verbose"},                  //
   {EVAL, 0, "", "eval", option::Arg::None, "--eval: run using evaluation logic"},  //
-  {0, 0, 0, 0, 0, 0},
+  {0, 0, nullptr, nullptr, nullptr, nullptr},
 };
 
 int main(int argc, char *argv[])
