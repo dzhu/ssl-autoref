@@ -167,7 +167,7 @@ void Tracker::makeWorld()
         wr.conf = obs.conf;
         wr.loc = obs.loc;
         wr.angle = obs.angle;
-        wr.team = team;
+        wr.team = static_cast<Team>(team);
         wr.robot_id = id;
         wr.vel = robot.fitVelocity();
         world.robots.push_back(wr);

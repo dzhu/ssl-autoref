@@ -1,13 +1,32 @@
-#include <stdarg.h>
+#include <cstdarg>
 
+#include "geomalgo.h"
 #include "util.h"
 
-const char *TeamName(int team)
+SSL_Referee::Command team_command(TeamCommand cmd, Team team)
 {
-  return team == TeamBlue ? "blue" : "yellow";
+#define X(s) \
+  case s:    \
+    return (team == TeamBlue) ? SSL_Referee::s##_BLUE : SSL_Referee::s##_YELLOW
+
+  switch (cmd) {
+    X(PREPARE_KICKOFF);
+    X(PREPARE_PENALTY);
+    X(DIRECT_FREE);
+    X(INDIRECT_FREE);
+    X(TIMEOUT);
+    X(GOAL);
+    X(BALL_PLACEMENT);
+  }
+#undef X
 }
 
-string StringFormat(const char *format, va_list al)
+const char *TeamName(Team team, bool capital)
+{
+  return team == TeamBlue ? (capital ? "Blue" : "blue") : (capital ? "Yellow" : "yellow");
+}
+
+std::string StringFormat(const char *format, va_list al)
 {
   va_list al2;
   va_copy(al2, al);
@@ -21,7 +40,7 @@ string StringFormat(const char *format, va_list al)
   va_end(al);
   va_end(al2);
 
-  return string(buf);
+  return std::string(buf);
 }
 
 vector2f OutOfBoundsLoc(const vector2f &objectLoc, const vector2f &objectDir)
@@ -96,31 +115,6 @@ vector2f ClosestDefenseAreaP(const vector2f &loc, bool ours, double dist)
   return vector2f(goal_x - sign(goal_x) * (DefenseRadius + dist), loc.y);
 }
 
-float DistToDefenseArea(const vector2f &loc, bool ours)
-{
-  // Check if the location is outside the goal line, and return either the
-  // distance to the corner, or to the goal line, as appropriate.
-  if (ours ? (loc.x < -FieldLengthH) : (loc.x > FieldLengthH)) {
-    float x = fabs(loc.x);
-    float y = fabs(loc.y);
-    if (y < DefenseStretchH + DefenseRadius) {
-      return x - FieldLengthH;
-    }
-    return hypotf(x - FieldLengthH, y - (DefenseStretchH + DefenseRadius));
-  }
-
-  const float goal_x = ours ? -FieldLengthH : FieldLengthH;
-  const float dx = fabs(goal_x - loc.x);
-  const float dy = fabs(loc.y) - static_cast<float>(DefenseStretchH);
-  if (dy > 0) {
-    // Measure radius
-    return hypot(dx, dy) - DefenseRadius;
-  }
-
-  // Measure x-distance
-  return dx - DefenseRadius;
-}
-
 bool IsInField(vector2f loc, float margin, bool avoid_defense)
 {
   // check outside field boundaries
@@ -179,9 +173,16 @@ vector2f BoundToField(vector2f loc, float margin, bool avoid_defense)
   return loc;
 }
 
-unsigned int FlipTeam(unsigned int team)
+Team FlipTeam(Team team)
 {
-  return team == TeamBlue ? TeamYellow : TeamBlue;
+  switch (team) {
+    case TeamBlue:
+      return TeamYellow;
+    case TeamYellow:
+      return TeamBlue;
+    default:
+      return TeamNone;
+  }
 }
 
 uint64_t GetTimeMicros()
@@ -189,4 +190,23 @@ uint64_t GetTimeMicros()
   timespec tv;
   clock_gettime(CLOCK_REALTIME, &tv);
   return tv.tv_sec * 1000000 + tv.tv_nsec / 1000;
+}
+
+int8_t GuessBlueSide(const World &w)
+{
+  double blue_right_weight = 0;
+  for (const auto &r : w.robots) {
+    if (r.visible()) {
+      if (DistToDefenseArea(r.loc, true) < -MaxRobotRadius) {
+        blue_right_weight += 5 * FieldLengthH * ((r.team == TeamBlue) ? 1 : -1);
+      }
+      else if (DistToDefenseArea(r.loc, false) < -MaxRobotRadius) {
+        blue_right_weight += -5 * FieldLengthH * ((r.team == TeamBlue) ? 1 : -1);
+      }
+      else {
+        blue_right_weight += r.loc.x * ((r.team == TeamBlue) ? 1 : -1);
+      }
+    }
+  }
+  return static_cast<int8_t>(sign_nz(blue_right_weight));
 }

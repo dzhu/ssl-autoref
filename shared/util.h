@@ -3,11 +3,24 @@
 #include <algorithm>
 #include <string>
 
+#include "referee.pb.h"
+
 #include "constants.h"
 #include "gvector.h"
+#include "world.h"
 
-using std::max;
-using std::string;
+enum TeamCommand
+{
+  PREPARE_KICKOFF,
+  PREPARE_PENALTY,
+  DIRECT_FREE,
+  INDIRECT_FREE,
+  TIMEOUT,
+  GOAL,
+  BALL_PLACEMENT,
+};
+
+SSL_Referee::Command team_command(TeamCommand cmd, Team team);
 
 struct tvec
 {
@@ -68,20 +81,20 @@ inline num1 bound(num1 x, num2 low, num2 high)
   return x;
 }
 
-const char *TeamName(int team);
+const char *TeamName(Team team, bool capital = false);
 
-string StringFormat(const char *format, va_list al);
+std::string StringFormat(const char *format, va_list al);
 
 vector2f OutOfBoundsLoc(const vector2f &objectLoc, const vector2f &objectDir);
 
 vector2f ClosestDefenseAreaP(const vector2f &loc, bool ours, double dist);
 
-float DistToDefenseArea(const vector2f &loc, bool ours);
-
 bool IsInField(vector2f loc, float margin, bool avoid_defense);
 
 vector2f BoundToField(vector2f loc, float margin, bool avoid_defense);
 
-unsigned int FlipTeam(unsigned int team);
+Team FlipTeam(Team team);
 
 uint64_t GetTimeMicros();
+
+int8_t GuessBlueSide(const World &w);

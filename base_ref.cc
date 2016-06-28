@@ -23,7 +23,6 @@ void BaseAutoref::updateGeometry(const SSL_GeometryData &g)
 
 void BaseAutoref::updateVision(const SSL_DetectionFrame &d)
 {
-  // puts("vision");
   tracker.updateVision(d);
   World w;
   if (tracker.getWorld(w)) {

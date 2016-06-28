@@ -15,6 +15,8 @@ EvaluationAutoref::EvaluationAutoref(bool verbose_) : verbose(verbose_)
   addEvent<BallTouchedEvent>();
   addEvent<LongDribbleEvent>();
   addEvent<KickTakenEvent>();
+  addEvent<TooManyRobotsEvent>();
+  addEvent<RobotSpeedEvent>();
 }
 
 bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z)

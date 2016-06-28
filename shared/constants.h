@@ -8,8 +8,13 @@ static const double KickDeadline = 10;
 
 static const int MaxCameras = 4;
 
-static const int TeamBlue = 0, TeamYellow = 1, TeamNone = 2;
-static const int NumTeams = 2;
+enum Team : int
+{
+  TeamBlue = 0,
+  TeamYellow,
+  TeamNone,
+};
+static const int NumTeams = static_cast<int>(TeamNone);
 
 static const int MaxTeamRobots = 6;
 static const int MaxRobots = NumTeams * MaxTeamRobots;

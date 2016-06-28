@@ -9,14 +9,14 @@
 struct CollideResult
 {
 public:
-  int team;
-  int robot_id;
+  Team team;
+  uint8_t robot_id;
   double time;
 
-  CollideResult() : team(0), robot_id(0), time(0)
+  CollideResult() : team(TeamNone), robot_id(0), time(0)
   {
   }
-  CollideResult(int t, int r, double tm) : team(t), robot_id(r), time(tm)
+  CollideResult(Team t, int r, double tm) : team(t), robot_id(r), time(tm)
   {
   }
 };

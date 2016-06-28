@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cmath>
+
+#include "constants.h"
 #include "gvector.h"
 
 // returns distance from point p to line x0-x1
@@ -583,4 +586,16 @@ vector LineMidpointAngular(const vector &p0, const vector &p1, real &dist)
   vector pn = (p1 - p0).norm();
   dist = pn.perpdot(p0) / pn.perpdot(dir);
   return (dir);
+}
+
+template <class vector>
+double DistToDefenseArea(const vector &loc, bool positive_x)
+{
+  vector p(loc.x * (positive_x ? 1 : -1), std::abs(loc.y));
+
+  if (p.y < DefenseStretchH) {
+    return std::abs(p.x - FieldLengthH) - DefenseRadius;
+  }
+
+  return std::hypot(p.x - FieldLengthH, p.y - DefenseStretchH) - DefenseRadius;
 }

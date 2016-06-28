@@ -40,10 +40,12 @@ struct AutorefVariables
   double stage_end;
   double kick_deadline;
 
-  uint8_t kick_team;
+  Team kick_team;
   uint8_t kicker_id;
 
-  uint8_t touch_team;
+  Team touch_team;
+  uint8_t touch_id;
+  vector2f touch_loc;
 
   int8_t blue_side;
 
@@ -79,17 +81,22 @@ struct AutorefVariables
 
 class AutorefEvent
 {
+  bool enabled;
+
 protected:
   BaseAutoref *ref;
   bool fired, fired_last;
-
   AutorefVariables vars;
+  string description;
+
+  bool isEnabled()
+  {
+    return enabled;
+  }
 
   virtual void _process(const World &w, bool ball_z_valid, float ball_z) = 0;
 
   const AutorefVariables &refVars() const;
-
-  string description;
 
   void setDescription(const char *format, ...)
   {
@@ -104,8 +111,18 @@ public:
   {
     fired_last = fired;
     fired = false;
+
+    if (!enabled) {
+      return;
+    }
+
     vars = refVars();
     _process(w, ball_z_valid, ball_z);
+  }
+
+  void setEnabled(bool e)
+  {
+    enabled = e;
   }
 
   virtual const char *name() const = 0;
@@ -128,7 +145,7 @@ public:
     return description;
   }
 
-  AutorefEvent(BaseAutoref *_ref) : ref(_ref), fired(false), fired_last(false)
+  AutorefEvent(BaseAutoref *_ref) : ref(_ref), fired(false), fired_last(false), enabled(true)
   {
   }
 };
@@ -265,7 +282,7 @@ public:
     return "BallExitEvent";
   }
 
-  unsigned int random_team()
+  Team random_team()
   {
     return binary_dist(generator) ? TeamYellow : TeamBlue;
   }
@@ -335,6 +352,8 @@ public:
   KickTakenEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
   {
   }
+
+  bool checkDefenseAreaDistanceInfraction(const World &w) const;
 };
 
 class KickExpiredEvent : public AutorefEvent
@@ -415,5 +434,40 @@ public:
 
   StageTimeEndedEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
   {
+  }
+};
+
+class TooManyRobotsEvent : public AutorefEvent
+{
+public:
+  static const char ID = 0;
+  void _process(const World &w, bool ball_z_valid, float ball_z);
+  const char *name() const
+  {
+    return "TooManyRobotsEvent";
+  }
+
+  TooManyRobotsEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
+  {
+  }
+};
+
+class RobotSpeedEvent : public AutorefEvent
+{
+  int violation_frames[NumTeams];
+
+  constexpr static float GameOffRobotSpeedLimit = 1500;
+
+public:
+  static const char ID = 0;
+  void _process(const World &w, bool ball_z_valid, float ball_z);
+  const char *name() const
+  {
+    return "RobotSpeedEvent";
+  }
+
+  RobotSpeedEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
+  {
+    violation_frames[0] = violation_frames[1] = 0;
   }
 };

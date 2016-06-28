@@ -1,18 +1,16 @@
 #pragma once
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <vector>
 
 #include "gvector.h"
-
-using namespace std;
 
 struct WorldRobot
 {
   float conf;
 
-  uint8_t team, robot_id;
+  Team team;
+  uint8_t robot_id;
 
   float angle;
   vector2f loc, vel;
@@ -22,7 +20,7 @@ struct WorldRobot
     return conf > .1;
   }
 
-  WorldRobot() : conf(0), team(0), robot_id(0), angle(0), loc(0, 0), vel(0, 0)
+  WorldRobot() : conf(0), team(TeamNone), robot_id(0), angle(0), loc(0, 0), vel(0, 0)
   {
   }
 };
@@ -42,7 +40,7 @@ struct World
 {
   double time;
 
-  vector<WorldRobot> robots;
+  std::vector<WorldRobot> robots;
   WorldBall ball;
 
   void reset()
