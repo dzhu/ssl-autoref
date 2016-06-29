@@ -57,6 +57,10 @@ void Tracker::updateVision(const SSL_DetectionFrame &d)
 {
   int camera = d.camera_id();
 
+  // if (num_cameras <= 0) {
+  //   num_cameras = 4;
+  // }
+
   // count how many cameras are sending, at first
   if (num_cameras <= 0) {
     if (!cameras_seen[camera]) {
@@ -64,7 +68,7 @@ void Tracker::updateVision(const SSL_DetectionFrame &d)
       cameras_seen[camera] = true;
     }
 
-    if (frames++ >= 200) {
+    if (frames++ >= 100) {
       num_cameras = num_cameras_seen;
 
       for (bool &s : cameras_seen) {
@@ -178,6 +182,7 @@ void Tracker::makeWorld()
       }
     }
   }
+
   if (ball.mergeObservations() >= 0) {
     const Observation &obs = ball.obs[ball.affinity];
     WorldBall &wb = world.ball;

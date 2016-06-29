@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "constants.h"
 #include "gvector.h"
 
 struct WorldRobot

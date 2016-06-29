@@ -1,0 +1,11 @@
+import "referee.proto";
+
+message RefereeUpdate
+{
+  required uint64 timestamp = 1;
+  optional SSL_Referee.Stage stage = 2;
+  optional SSL_Referee.Command command = 3;
+  optional string description = 4;
+  optional SSL_Referee.Command next_command = 5;
+  optional uint64 stage_time_left = 6;
+};

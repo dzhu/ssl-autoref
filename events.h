@@ -353,7 +353,7 @@ public:
   {
   }
 
-  bool checkDefenseAreaDistanceInfraction(const World &w) const;
+  int checkDefenseAreaDistanceInfraction(const World &w) const;
 };
 
 class KickExpiredEvent : public AutorefEvent
@@ -439,6 +439,8 @@ public:
 
 class TooManyRobotsEvent : public AutorefEvent
 {
+  int blue_frames, yellow_frames;
+
 public:
   static const char ID = 0;
   void _process(const World &w, bool ball_z_valid, float ball_z);
@@ -447,7 +449,7 @@ public:
     return "TooManyRobotsEvent";
   }
 
-  TooManyRobotsEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
+  TooManyRobotsEvent(BaseAutoref *_ref) : AutorefEvent(_ref), blue_frames(0), yellow_frames(0)
   {
   }
 };
@@ -456,7 +458,7 @@ class RobotSpeedEvent : public AutorefEvent
 {
   int violation_frames[NumTeams];
 
-  constexpr static float GameOffRobotSpeedLimit = 1500;
+  constexpr static float GameOffRobotSpeedLimit = 1600;
 
 public:
   static const char ID = 0;

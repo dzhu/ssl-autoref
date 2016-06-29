@@ -20,7 +20,7 @@ enum TeamCommand
   BALL_PLACEMENT,
 };
 
-SSL_Referee::Command team_command(TeamCommand cmd, Team team);
+SSL_Referee::Command teamCommand(TeamCommand cmd, Team team);
 
 struct tvec
 {
@@ -43,6 +43,11 @@ struct tvec
     return dist(v, v0) < mult * dist(start.v, end.v);
   }
 };
+
+Team commandTeam(SSL_Referee::Command command);
+
+std::string commandDisplayName(SSL_Referee::Command command);
+std::string stageDisplayName(SSL_Referee::Stage stage);
 
 template <class num>
 inline num sign(num x)

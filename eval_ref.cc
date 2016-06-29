@@ -27,6 +27,11 @@ bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z
   SSL_Referee::Stage last_stage = vars.stage;
   SSL_Referee::Command last_command = vars.cmd;
 
+  if (vars.blue_side == 0) {
+    vars.blue_side = GuessBlueSide(w);
+    printf("Initializing blue side to %d.\n", vars.blue_side);
+  }
+
   // printf("-- state: %s\n", ref_state_names[vars.state]);
   for (auto it = events.begin(); it < events.end(); ++it) {
     AutorefEvent *ev = *it;
@@ -35,13 +40,37 @@ bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z
     if (ev->firingNew()) {
       AutorefVariables new_vars = ev->getUpdate();
 
+      const SSL_Referee &ref = getRefboxMessage();
+
       char time_buf[256];
-      time_t tt = w.time;
+      uint64_t t0 = ref.packet_timestamp();
+      time_t tt = t0 / 1e6;
+      if (tt == 0) {
+        tt = w.time;
+      }
       tm *st = localtime(&tt);
       strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", st);
 
+      update.Clear();
+      update.set_timestamp(w.time * 1e6);
+      update.set_stage_time_left(ref.stage_time_left());
+
+      if (ev->getDescription().size() > 0) {
+        update.set_description(ev->getDescription());
+      }
+      if (new_vars.cmd != vars.cmd) {
+        update.set_command(new_vars.cmd);
+
+        if (new_vars.cmd == SSL_Referee::STOP || new_vars.cmd == SSL_Referee::PREPARE_KICKOFF_YELLOW
+            || new_vars.cmd == SSL_Referee::PREPARE_KICKOFF_BLUE
+            || new_vars.cmd == SSL_Referee::PREPARE_PENALTY_YELLOW
+            || new_vars.cmd == SSL_Referee::PREPARE_PENALTY_BLUE) {
+          update.set_next_command(new_vars.next_cmd);
+        }
+      }
+
       if (verbose) {
-        printf("\n%s.%03d event fired: %s\n", time_buf, static_cast<int>(1000 * (w.time - tt)), ev->name());
+        printf("\n%ld.%06ld %s event fired: %s\n", t0 / 1000000, t0 % 1000000, time_buf, ev->name());
 
 #define PRINT_DIFF(format, field)                          \
   if (new_vars.field != vars.field) {                      \
@@ -73,7 +102,8 @@ bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z
 
       // print readable updates
       if (ev->getDescription().size() > 0) {
-        printf("\n%s \x1b[32;1m%s\x1b[m\n", time_buf, ev->getDescription().c_str());
+        printf(
+          "\n%ld.%06ld %s \x1b[32;1m%s\x1b[m\n", t0 / 1000000, t0 % 1000000, time_buf, ev->getDescription().c_str());
       }
       // else{
       //   printf("\n%s \x1b[32;1mEvent fired: %s\x1b[m\n", time_buf, ev->name());

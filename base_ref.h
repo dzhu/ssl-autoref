@@ -9,6 +9,7 @@
 #include "messages_robocup_ssl_wrapper.pb.h"
 #include "rcon.pb.h"
 #include "referee.pb.h"
+#include "referee_update.pb.h"
 
 #include "constants.h"
 #include "events.h"
@@ -36,6 +37,8 @@ protected:
   uint64_t cmd_timestamp;
 
   AutorefVariables vars;
+
+  RefereeUpdate update;
 
   template <typename E>
   void addEvent()
@@ -92,6 +95,7 @@ public:
 
   SSL_Referee makeMessage();
   SSL_RefereeRemoteControlRequest makeRemote();
+  const RefereeUpdate &getUpdate();
 
   void updateGeometry(const SSL_GeometryData &g);
   void updateVision(const SSL_DetectionFrame &d);

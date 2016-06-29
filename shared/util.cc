@@ -3,7 +3,7 @@
 #include "geomalgo.h"
 #include "util.h"
 
-SSL_Referee::Command team_command(TeamCommand cmd, Team team)
+SSL_Referee::Command teamCommand(TeamCommand cmd, Team team)
 {
 #define X(s) \
   case s:    \
@@ -19,6 +19,97 @@ SSL_Referee::Command team_command(TeamCommand cmd, Team team)
     X(BALL_PLACEMENT);
   }
 #undef X
+}
+
+Team commandTeam(SSL_Referee::Command command)
+{
+  switch (command) {
+    case SSL_Referee::TIMEOUT_BLUE:
+    case SSL_Referee::GOAL_BLUE:
+    case SSL_Referee::BALL_PLACEMENT_BLUE:
+    case SSL_Referee::DIRECT_FREE_BLUE:
+    case SSL_Referee::INDIRECT_FREE_BLUE:
+    case SSL_Referee::PREPARE_KICKOFF_BLUE:
+    case SSL_Referee::PREPARE_PENALTY_BLUE:
+      return TeamBlue;
+
+    case SSL_Referee::TIMEOUT_YELLOW:
+    case SSL_Referee::GOAL_YELLOW:
+    case SSL_Referee::BALL_PLACEMENT_YELLOW:
+    case SSL_Referee::DIRECT_FREE_YELLOW:
+    case SSL_Referee::INDIRECT_FREE_YELLOW:
+    case SSL_Referee::PREPARE_KICKOFF_YELLOW:
+    case SSL_Referee::PREPARE_PENALTY_YELLOW:
+      return TeamYellow;
+
+    case SSL_Referee::NORMAL_START:
+    case SSL_Referee::STOP:
+    case SSL_Referee::FORCE_START:
+    case SSL_Referee::HALT:
+      return TeamNone;
+  }
+}
+
+std::string commandDisplayName(SSL_Referee::Command command)
+{
+  switch (command) {
+    case SSL_Referee::TIMEOUT_BLUE:
+      return "TIMEOUT BLUE";
+    case SSL_Referee::GOAL_BLUE:
+      return "GOAL BLUE";
+    case SSL_Referee::BALL_PLACEMENT_BLUE:
+      return "PLACEMENT BLUE";
+    case SSL_Referee::DIRECT_FREE_BLUE:
+      return "DIRECT BLUE";
+    case SSL_Referee::INDIRECT_FREE_BLUE:
+      return "INDIRECT BLUE";
+    case SSL_Referee::PREPARE_KICKOFF_BLUE:
+      return "KICKOFF BLUE";
+    case SSL_Referee::PREPARE_PENALTY_BLUE:
+      return "PENALTY BLUE";
+
+    case SSL_Referee::TIMEOUT_YELLOW:
+      return "TIMEOUT YELLOW";
+    case SSL_Referee::GOAL_YELLOW:
+      return "GOAL YELLOW";
+    case SSL_Referee::BALL_PLACEMENT_YELLOW:
+      return "PLACEMENT YELLOW";
+    case SSL_Referee::DIRECT_FREE_YELLOW:
+      return "DIRECT YELLOW";
+    case SSL_Referee::INDIRECT_FREE_YELLOW:
+      return "INDIRECT YELLOW";
+    case SSL_Referee::PREPARE_KICKOFF_YELLOW:
+      return "KICKOFF YELLOW";
+    case SSL_Referee::PREPARE_PENALTY_YELLOW:
+      return "PENALTY YELLOW";
+
+    case SSL_Referee::NORMAL_START:
+      return "START";
+    case SSL_Referee::STOP:
+      return "STOP";
+    case SSL_Referee::FORCE_START:
+      return "FORCE START";
+    case SSL_Referee::HALT:
+      return "HALT";
+  }
+}
+
+std::string stageDisplayName(SSL_Referee::Stage stage)
+{
+  switch (stage) {
+    case SSL_Referee::NORMAL_FIRST_HALF_PRE:
+      return "PRE FIRST HALF";
+    case SSL_Referee::NORMAL_FIRST_HALF:
+      return "FIRST HALF";
+    case SSL_Referee::NORMAL_HALF_TIME:
+      return "HALF TIME";
+    case SSL_Referee::NORMAL_SECOND_HALF_PRE:
+      return "PRE SECOND HALF";
+    case SSL_Referee::NORMAL_SECOND_HALF:
+      return "SECOND HALF";
+    default:
+      return "POST GAME";
+  }
 }
 
 const char *TeamName(Team team, bool capital)
