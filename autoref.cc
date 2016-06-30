@@ -73,9 +73,9 @@ bool Autoref::doEvents(const World &w, bool ball_z_valid, float ball_z)
 
           PRINT_DIFF("%.3f", stage_end);
           PRINT_DIFF("%.3f", kick_deadline);
-          PRINT_DIFF("%d", kick_team);
-          PRINT_DIFF("%X", kicker_id);
-          PRINT_DIFF("%d", touch_team);
+          PRINT_DIFF("%d", kicker.team);
+          PRINT_DIFF("%X", kicker.id);
+          PRINT_DIFF("%d", toucher.team);
           PRINT_DIFF("%d", blue_side);
         }
 

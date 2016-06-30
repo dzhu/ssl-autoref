@@ -29,6 +29,35 @@ enum RefGameState
 
 extern const char *ref_state_names[];
 
+struct RobotID
+{
+  Team team;
+  uint8_t id;
+
+  RobotID() : team(TeamNone), id(MaxRobotIds)
+  {
+  }
+  RobotID(Team t, uint8_t i) : team(t), id(i)
+  {
+  }
+
+  void set(Team t, uint8_t i)
+  {
+    team = t;
+    id = i;
+  }
+
+  void clear()
+  {
+    set(TeamNone, MaxRobotIds);
+  }
+
+  bool isValid()
+  {
+    return (team == TeamBlue || team == TeamYellow) && (id >= 0 && id < MaxRobotIds);
+  }
+};
+
 struct AutorefVariables
 {
   RefGameState state;
@@ -40,11 +69,8 @@ struct AutorefVariables
   double stage_end;
   double kick_deadline;
 
-  Team kick_team;
-  uint8_t kicker_id;
-
-  Team touch_team;
-  uint8_t touch_id;
+  RobotID kicker;
+  RobotID toucher;
   vector2f touch_loc;
 
   int8_t blue_side;
@@ -72,7 +98,6 @@ struct AutorefVariables
         reset_loc(0, 0),
         stage_end(0),
         kick_deadline(0),
-        touch_team(TeamNone),
         blue_side(0),
         games_played(0)
   {
@@ -282,11 +307,6 @@ public:
     return "BallExitEvent";
   }
 
-  Team random_team()
-  {
-    return binary_dist(generator) ? TeamYellow : TeamBlue;
-  }
-
   BallExitEvent(BaseAutoref *_ref)
       : AutorefEvent(_ref),
         last_ball_loc(0, 0),
@@ -353,7 +373,7 @@ public:
   {
   }
 
-  int checkDefenseAreaDistanceInfraction(const World &w) const;
+  RobotID checkDefenseAreaDistanceInfraction(const World &w) const;
 };
 
 class KickExpiredEvent : public AutorefEvent

@@ -18,7 +18,7 @@
 #include "optionparser.h"
 #include "rconclient.h"
 #include "referee.pb.h"
-#include "referee_update.pb.h"
+#include "referee_call.pb.h"
 #include "udp.h"
 
 #include "gui/field_panel.h"
@@ -41,6 +41,9 @@ const wxEventType wxEVT_WORLD_UPDATE = wxNewEventType();
 extern const wxEventType wxEVT_GEOMETRY_UPDATE;
 const wxEventType wxEVT_GEOMETRY_UPDATE = wxNewEventType();
 
+extern const wxEventType wxEVT_AUTOREF_UPDATE;
+const wxEventType wxEVT_AUTOREF_UPDATE = wxNewEventType();
+
 enum OptionIndex
 {
   UNKNOWN,
@@ -59,7 +62,7 @@ const option::Descriptor options[] = {
   {0, 0, nullptr, nullptr, nullptr, nullptr},
 };
 
-// TODO bad idea, but I don't feel like wrestling with wx at the moment.
+// TODO don't do this
 int g_argc;
 char **g_argv;
 
@@ -83,7 +86,7 @@ private:
   wxGameInfoPanel *info_panel;
   wxAutorefHistoryPanel *history_panel;
   wxFieldPanel *field_panel;
-  void addRefereeUpdate(wxCommandEvent &event)
+  void addRefereeCall(wxCommandEvent &event)
   {
     history_panel->addUpdate(event);
   }
@@ -91,30 +94,33 @@ private:
   void addGameUpdate(wxCommandEvent &event)
   {
     info_panel->addUpdate(event);
-    GetSizer()->Layout();
   }
 
   void addWorldUpdate(wxCommandEvent &event)
   {
     field_panel->addUpdate(event);
-    GetSizer()->Layout();
     field_panel->Refresh();
   }
 
   void addGeometryUpdate(wxCommandEvent &event)
   {
     field_panel->addGeometryUpdate(event);
-    GetSizer()->Layout();
+  }
+
+  void addAutorefUpdate(wxCommandEvent &event)
+  {
+    field_panel->addAutorefUpdate(event);
   }
 
   DECLARE_EVENT_TABLE()
 };
 
 BEGIN_EVENT_TABLE(AutorefWxFrame, wxFrame)
-EVT_COMMAND(wxID_ANY, wxEVT_REF_UPDATE, AutorefWxFrame::addRefereeUpdate)
+EVT_COMMAND(wxID_ANY, wxEVT_REF_UPDATE, AutorefWxFrame::addRefereeCall)
 EVT_COMMAND(wxID_ANY, wxEVT_GAME_UPDATE, AutorefWxFrame::addGameUpdate)
 EVT_COMMAND(wxID_ANY, wxEVT_WORLD_UPDATE, AutorefWxFrame::addWorldUpdate)
 EVT_COMMAND(wxID_ANY, wxEVT_GEOMETRY_UPDATE, AutorefWxFrame::addGeometryUpdate)
+EVT_COMMAND(wxID_ANY, wxEVT_AUTOREF_UPDATE, AutorefWxFrame::addAutorefUpdate)
 END_EVENT_TABLE()
 
 class AutorefWxThread : public wxThread
@@ -175,7 +181,7 @@ AutorefWxFrame::AutorefWxFrame(const wxString &title) : wxFrame(nullptr, wxID_AN
   info_panel = new wxGameInfoPanel(this, wxID_ANY);
   sizer->Add(info_panel, gbp(2, 1), wxDefaultSpan, wxEXPAND);
 
-  history_panel = new wxAutorefHistoryPanel(this, wxID_ANY, 4);
+  history_panel = new wxAutorefHistoryPanel(this, wxID_ANY, 3);
   sizer->Add(history_panel, gbp(2, 3), wxGBSpan(2, 1), wxEXPAND);
 
   field_panel = new wxFieldPanel(this, wxID_ANY);
@@ -190,19 +196,6 @@ AutorefWxFrame::AutorefWxFrame(const wxString &title) : wxFrame(nullptr, wxID_AN
 void AutorefWxFrame::OnQuit(wxCommandEvent &event)
 {
   Close(true);
-}
-
-void log(const char *s)
-{
-  if (0) {
-    return;
-  }
-  char time_buf[64];
-  uint64_t t0 = GetTimeMicros();
-  time_t tt = t0 / 1e6;
-  tm *st = localtime(&tt);
-  strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", st);
-  printf("%s.%06lu %s\n", time_buf, t0 % 1000000, s);
 }
 
 wxThread::ExitCode AutorefWxThread::Entry()
@@ -255,8 +248,6 @@ wxThread::ExitCode AutorefWxThread::Entry()
     autoref = new Autoref(verbose);
   }
 
-  // Address ref_addr(RefGroup, RefPort);
-
   SSL_WrapperPacket vision_msg;
   SSL_Referee ref_msg;
 
@@ -264,19 +255,6 @@ wxThread::ExitCode AutorefWxThread::Entry()
   int n_fds = std::max(vision_net.getFd(), ref_net.getFd()) + 1;
 
   int t = 0;
-
-  for (int i = 0; i < 40; i++) {
-    break;
-    auto up = new RefereeUpdate();
-    up->set_description("test test test test test test test test description");
-    up->set_command(SSL_Referee::STOP);
-    up->set_next_command(i % 2 ? SSL_Referee::INDIRECT_FREE_BLUE : SSL_Referee::INDIRECT_FREE_YELLOW);
-    up->set_stage_time_left(1717171717);
-    auto evt = new wxCommandEvent(wxEVT_REF_UPDATE);
-    evt->SetClientData(up);
-    handler->GetEventHandler()->QueueEvent(evt);
-    usleep(3000000);
-  }
 
   while (true) {
     FD_ZERO(&read_fds);
@@ -297,20 +275,26 @@ wxThread::ExitCode AutorefWxThread::Entry()
           }
         }
 
+        if (autoref->isStateUpdated()) {
+          auto vars = new AutorefVariables();
+          *vars = autoref->getState();
+          auto evt = new wxCommandEvent(wxEVT_AUTOREF_UPDATE);
+          evt->SetClientData(vars);
+          handler->GetEventHandler()->QueueEvent(evt);
+        }
+
         if (autoref->isRemoteReady()) {
           if (rcon_opened) {
             rcon.sendRequest(autoref->makeRemote());
           }
 
           if (autoref->tracker.isReady()) {
-            const RefereeUpdate &orig_update = autoref->getUpdate();
-            auto update = new RefereeUpdate();
+            const RefereeCall &orig_update = autoref->getUpdate();
+            auto update = new RefereeCall();
             update->CopyFrom(orig_update);
             auto evt = new wxCommandEvent(wxEVT_REF_UPDATE);
             evt->SetClientData(update);
             handler->GetEventHandler()->QueueEvent(evt);
-
-            log(update->description().c_str());
           }
         }
       }

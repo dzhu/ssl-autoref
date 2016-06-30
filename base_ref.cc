@@ -97,7 +97,7 @@ SSL_RefereeRemoteControlRequest BaseAutoref::makeRemote()
   return msg;
 }
 
-const RefereeUpdate &BaseAutoref::getUpdate()
+const RefereeCall &BaseAutoref::getUpdate()
 {
   return update;
 }

@@ -4,12 +4,12 @@
 #include <wx/wx.h>
 
 #include "referee.pb.h"
-#include "referee_update.pb.h"
+#include "referee_call.pb.h"
 
 class wxRefereeHistoryItem : public wxPanel
 {
   wxSizer *sizer;
-  RefereeUpdate update;
+  RefereeCall update;
   bool emph;
 
   wxStaticText *command_label, *command_text, *next_label, *next_text;
@@ -25,7 +25,7 @@ public:
   {
   }
 
-  wxRefereeHistoryItem(wxWindow *parent, wxWindowID id, RefereeUpdate _update);
+  wxRefereeHistoryItem(wxWindow *parent, wxWindowID id, RefereeCall _update);
 
   void setEmph(bool e);
 

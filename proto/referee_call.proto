@@ -1,6 +1,6 @@
 import "referee.proto";
 
-message RefereeUpdate
+message RefereeCall
 {
   required uint64 timestamp = 1;
   optional SSL_Referee.Stage stage = 2;

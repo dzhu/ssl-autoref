@@ -102,14 +102,14 @@ void RefboxUpdateEvent::_process(const World &w, bool ball_z_valid, float ball_z
     case SSL_Referee::INDIRECT_FREE_YELLOW:
     case SSL_Referee::PREPARE_KICKOFF_YELLOW:
     case SSL_Referee::PREPARE_PENALTY_YELLOW:
-      vars.kick_team = TeamYellow;
+      vars.kicker.set(TeamYellow, MaxRobotIds);
       break;
 
     case SSL_Referee::PREPARE_KICKOFF_BLUE:
     case SSL_Referee::INDIRECT_FREE_BLUE:
     case SSL_Referee::DIRECT_FREE_BLUE:
     case SSL_Referee::PREPARE_PENALTY_BLUE:
-      vars.kick_team = TeamBlue;
+      vars.kicker.set(TeamBlue, MaxRobotIds);
       break;
 
     default:
@@ -188,11 +188,11 @@ void BallSpeedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
   if (fired) {
     vars.cmd = SSL_Referee::STOP;
-    vars.next_cmd = (vars.touch_team == TeamBlue) ? SSL_Referee::INDIRECT_FREE_YELLOW : SSL_Referee::INDIRECT_FREE_BLUE;
+    vars.next_cmd = teamCommand(INDIRECT_FREE, vars.toucher.team);
     vars.reset = true;
     vars.reset_loc = BoundToField(w.ball.loc, 100, true);
     vars.state = REF_WAIT_STOP;
-    setDescription("Ball kicked too fast by %s team", TeamName(vars.touch_team));
+    setDescription("Ball kicked too fast by %s team", TeamName(vars.toucher.team));
   }
 }
 
@@ -258,6 +258,7 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   vector2f ball_loc;
 
   bool EXTRAPOLATE_RAW = true;
+  int MAX_EXTRAPOLATE_FRAMES = 4;
   int frames = 0;
   if (EXTRAPOLATE_RAW) {
     if (w.ball.visible()) {
@@ -271,8 +272,8 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       vector2f p0, v0;
       linvel(ball_history, p0, v0);
 
-      frames = min(lost_cnt, 30);
-      ball_loc = p0 + v0 * (frames + ball_history.size() - 1) * FramePeriod;
+      frames = min(lost_cnt, MAX_EXTRAPOLATE_FRAMES);
+      ball_loc = p0 + v0 * FramePeriod * (frames + ball_history.size() - 1);
     }
   }
   else {
@@ -290,45 +291,45 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   fired = cnt > 1;
 
   if (fired) {
-    if (vars.touch_team != TeamBlue && vars.touch_team != TeamYellow) {
-      vars.touch_team = random_team();
+    if (vars.toucher.team != TeamBlue && vars.toucher.team != TeamYellow) {
+      vars.toucher.team = RandomTeam();
     }
 
     vars.reset = true;
     vars.state = REF_WAIT_STOP;
     vars.cmd = SSL_Referee::STOP;
-    vars.kick_team = FlipTeam(vars.touch_team);
+    vars.kicker.team = FlipTeam(vars.toucher.team);
 
     vector2f out_loc = OutOfBoundsLoc(last_ball_loc, ball_loc - last_ball_loc);
-    bool own_half = (vars.touch_team == TeamBlue) == (vars.blue_side * out_loc.x > 0);
+    bool own_half = (vars.toucher.team == TeamBlue) == (vars.blue_side * out_loc.x > 0);
     bool past_goal_line = fabs(out_loc.x) - fabs(out_loc.y) > FieldLengthH - FieldWidthH;
     bool crossed_midline = vars.touch_loc.x * out_loc.x < 0;
 
     // check for icing
     if (past_goal_line && crossed_midline && !own_half) {
-      vars.next_cmd = teamCommand(INDIRECT_FREE, vars.kick_team);
+      vars.next_cmd = teamCommand(INDIRECT_FREE, vars.kicker.team);
       vars.reset_loc = vars.touch_loc;
 
-      setDescription("Icing (by %s %X)", TeamName(vars.touch_team), vars.touch_id);
+      setDescription("Icing (by %s %X)", TeamName(vars.toucher.team), vars.toucher.id);
     }
     // if not icing, then throw-in, corner kick, or goal kick
     else {
       vector2f pos;
       if (past_goal_line) {
         pos.set(sign(out_loc.x) * (FieldLengthH - (own_half ? 100 : 500)), sign(out_loc.y) * (FieldWidthH - 100));
-        vars.next_cmd = teamCommand(DIRECT_FREE, vars.kick_team);
+        vars.next_cmd = teamCommand(DIRECT_FREE, vars.kicker.team);
 
         if (own_half) {
-          setDescription("Corner kick (touched by %s %X)", TeamName(vars.touch_team), vars.touch_id);
+          setDescription("Corner kick (touched by %s %X)", TeamName(vars.toucher.team), vars.toucher.id);
         }
         else {
-          setDescription("Goal kick (touched by %s %X)", TeamName(vars.touch_team), vars.touch_id);
+          setDescription("Goal kick (touched by %s %X)", TeamName(vars.toucher.team), vars.toucher.id);
         }
       }
       else {
         pos.set(out_loc.x, sign(out_loc.y) * (FieldWidthH - 100));
-        vars.next_cmd = teamCommand(INDIRECT_FREE, vars.kick_team);
-        setDescription("Throw-in (touched by %s %X)", TeamName(vars.touch_team), vars.touch_id);
+        vars.next_cmd = teamCommand(INDIRECT_FREE, vars.kicker.team);
+        setDescription("Throw-in (touched by %s %X)", TeamName(vars.toucher.team), vars.toucher.id);
       }
       vars.reset_loc = pos;
     }
@@ -347,10 +348,10 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   for (auto &proc : procs) {
     if (proc->proc(w, res)) {
       fired = true;
-      vars.touch_team = res.team;
-      vars.touch_id = res.robot_id;
+      vars.toucher.team = res.team;
+      vars.toucher.id = res.robot_id;
       vars.touch_loc = w.ball.loc;  // TODO compute and use past touch location in detectors
-      setDescription("Ball touched by %s team", TeamName(vars.touch_team));
+      setDescription("Ball touched by %s team", TeamName(vars.toucher.team));
       break;
     }
   }
@@ -374,22 +375,22 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
           vars.cmd = SSL_Referee::STOP;
           vars.next_cmd = teamCommand(PREPARE_PENALTY, res.team);
 
-          setDescription("Multiple defenders (entire) (by %s %X)", TeamName(vars.touch_team), vars.touch_id);
+          setDescription("Multiple defenders (entire) (by %s %X)", TeamName(vars.toucher.team), vars.toucher.id);
         }
         else if (own_dist < MaxRobotRadius) {
           vars.state = REF_WAIT_STOP;
           vars.cmd = SSL_Referee::STOP;
 
-          setDescription("Multiple defenders (partial) (by %s %X)", TeamName(vars.touch_team), vars.touch_id);
+          setDescription("Multiple defenders (partial) (by %s %X)", TeamName(vars.toucher.team), vars.toucher.id);
           // TODO send card
         }
       }
       // check opponent defense area
       if (DistToDefenseArea(r.loc, !own_side_positive_x) < MaxRobotRadius) {
         vars.state = REF_WAIT_STOP;
-        vars.kick_team = FlipTeam(res.team);
+        vars.kicker.team = FlipTeam(res.team);
         vars.cmd = SSL_Referee::STOP;
-        vars.next_cmd = teamCommand(INDIRECT_FREE, vars.kick_team);
+        vars.next_cmd = teamCommand(INDIRECT_FREE, vars.kicker.team);
 
         setDescription("Attacker in defense area");
       }
@@ -437,7 +438,7 @@ void KickReadyEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   fired = timeout || ((w.time - t0_bots > 1) && (w.time - t0_ball > 1));
 
   if (fired) {
-    vars.touch_team = TeamNone;
+    vars.toucher.clear();
     vars.cmd = vars.next_cmd;
     vars.next_cmd = SSL_Referee::HALT;
     setDescription("Starting kick: %s", SSL_Referee::Command_Name(vars.cmd).c_str());
@@ -501,14 +502,14 @@ void KickTakenEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   if (fired) {
     vars.blue_side = GuessBlueSide(w);
 
-    int dist_id = checkDefenseAreaDistanceInfraction(w);
-    if (dist_id >= 0) {
+    RobotID offender = checkDefenseAreaDistanceInfraction(w);
+    if (offender.isValid()) {
       vars.state = REF_WAIT_STOP;
       vars.cmd = SSL_Referee::STOP;
-      vars.kick_team = FlipTeam(vars.kick_team);
-      vars.next_cmd = teamCommand(INDIRECT_FREE, vars.kick_team);
+      vars.kicker.team = FlipTeam(vars.kicker.team);
+      vars.next_cmd = teamCommand(INDIRECT_FREE, vars.kicker.team);
 
-      setDescription("Too close to defense area at kick (%s %X)", TeamName(vars.kick_team), dist_id);
+      setDescription("Too close to defense area at kick (%s %X)", TeamName(offender.team), offender.id);
     }
     else {
       vars.state = REF_RUN;
@@ -517,19 +518,19 @@ void KickTakenEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   }
 }
 
-int KickTakenEvent::checkDefenseAreaDistanceInfraction(const World &w) const
+RobotID KickTakenEvent::checkDefenseAreaDistanceInfraction(const World &w) const
 {
-  bool positive_x = (vars.blue_side > 0) != (vars.kick_team == TeamBlue);
+  bool positive_x = (vars.blue_side > 0) != (vars.kicker.team == TeamBlue);
   for (const auto &robot : w.robots) {
-    if (robot.team != vars.kick_team) {
+    if (robot.team != vars.kicker.team) {
       continue;
     }
 
     if (DistToDefenseArea(robot.loc, positive_x) < MaxRobotRadius + 200) {
-      return robot.robot_id;
+      return RobotID(robot.team, robot.robot_id);
     }
   }
-  return -1;
+  return RobotID();
 }
 
 const char KickExpiredEvent::ID;
@@ -600,7 +601,8 @@ void GoalScoredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     vars.team[scoring_team].score++;
 
     vars.cmd = SSL_Referee::STOP;
-    vars.kick_team = FlipTeam(scoring_team);
+    vars.next_cmd = teamCommand(GOAL, scoring_team);
+    vars.kicker.team = FlipTeam(scoring_team);
     vars.state = REF_DELAY_GOAL;
     vars.reset = true;
     vars.reset_loc.set(0, 0);
@@ -620,9 +622,8 @@ void DelayDoneEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   fired = cnt++ > 10;
   if (fired) {
     vars.state = REF_WAIT_STOP;
-    vars.cmd = (vars.kick_team == TeamBlue) ? SSL_Referee::GOAL_YELLOW : SSL_Referee::GOAL_BLUE;
-    vars.next_cmd
-      = (vars.kick_team == TeamBlue) ? SSL_Referee::PREPARE_KICKOFF_BLUE : SSL_Referee::PREPARE_KICKOFF_YELLOW;
+    vars.cmd = teamCommand(GOAL, FlipTeam(vars.kicker.team));
+    vars.next_cmd = teamCommand(PREPARE_KICKOFF, vars.kicker.team);
     vars.reset = true;
     vars.reset_loc.set(0, 0);
   }

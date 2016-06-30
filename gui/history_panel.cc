@@ -5,8 +5,8 @@ IMPLEMENT_DYNAMIC_CLASS(wxAutorefHistoryPanel, wxPanel);
 
 void wxAutorefHistoryPanel::addUpdate(wxCommandEvent &event)
 {
-  RefereeUpdate *update_p = reinterpret_cast<RefereeUpdate *>(event.GetClientData());
-  RefereeUpdate update = *update_p;
+  RefereeCall *update_p = reinterpret_cast<RefereeCall *>(event.GetClientData());
+  RefereeCall update = *update_p;
   delete update_p;
 
   // set current first item to small

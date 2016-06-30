@@ -1,6 +1,7 @@
 #include "field_panel.h"
 
 #include "gui_utils.h"
+#include "style.h"
 
 IMPLEMENT_DYNAMIC_CLASS(wxFieldPanel, wxPanel);
 
@@ -36,15 +37,15 @@ void wxFieldPanel::render(wxDC &dc)
   const SSL_GeometryFieldSize &dims = geo.field();
   wxSize sz = GetSize();
 
-  double fw = dims.field_width(), fl = dims.field_length();
-  double gd = dims.goal_depth(), gw = dims.goal_width();
-  double dr = dims.defense_radius(), ds = dims.defense_stretch();
+  double fwh = dims.field_width() / 2, flh = dims.field_length() / 2;
+  double gd = dims.goal_depth(), gwh = dims.goal_width() / 2;
+  double dr = dims.defense_radius(), dsh = dims.defense_stretch() / 2;
 
   double margin = 250;
-  double min_x = -fl / 2 - margin;
-  double max_x = fl / 2 + margin;
-  double min_y = -fw / 2 - margin;
-  double max_y = fw / 2 + margin;
+  double min_x = -flh - margin;
+  double max_x = flh + margin;
+  double min_y = -fwh - margin;
+  double max_y = fwh + margin;
 
   dc.SetDeviceOrigin(sz.x / 2, sz.y / 2);
   double scale = std::min(sz.y / (max_y - min_y), sz.x / (max_x - min_x));
@@ -55,36 +56,60 @@ void wxFieldPanel::render(wxDC &dc)
   dc.SetBrush(wxBrush(wxColour(0, 128, 0)));
   dc.DrawRectangle(min_x, min_y, max_x - min_x, max_y - min_y);
 
+  // fill goals
+  int blue_side = vars.blue_side;
+  if (blue_side != 0) {
+    dc.SetPen(wxNullPen);
+
+    dc.SetBrush(wxBrush(blue_side > 0 ? blue_team_colour : yellow_team_colour));
+    dc.DrawRectangle(flh, -gwh, gd, gwh * 2);
+
+    dc.SetBrush(wxBrush(blue_side > 0 ? yellow_team_colour : blue_team_colour));
+    dc.DrawRectangle(-flh, gwh, -gd, -gwh * 2);
+  }
+
+  // highlight last touch robot
+  for (const auto &r : w.robots) {
+    if (vars.toucher.isValid() && r.robot_id == vars.toucher.id && r.team == vars.toucher.team) {
+      dc.SetPen(wxNullPen);
+      dc.SetBrush(wxBrush(wxColour(224, 128, 0)));
+      dc.DrawCircle(wxPoint(r.loc.x, r.loc.y), 200);
+      break;
+    }
+  }
+
   // draw basic field lines
   dc.SetBrush(wxBrush(wxColour(0, 0, 0), wxTRANSPARENT));
   dc.SetPen(wxPen(wxColour(255, 255, 255)));
   dc.DrawCircle(wxPoint(0, 0), 500);
-  dc.DrawLine(0, -fw / 2, 0, fw / 2);
-  dc.DrawRectangle(-fl / 2, -fw / 2, fl, fw);
+  dc.DrawLine(0, -fwh, 0, fwh);
+  dc.DrawRectangle(-flh, -fwh, flh * 2, fwh * 2);
 
   // draw defense areas
-  dc.DrawLine(-fl / 2 + dr, ds / 2, -fl / 2 + dr, -ds / 2);
-  dc.DrawArc(-fl / 2 + dr, ds / 2, -fl / 2, ds / 2 + dr, -fl / 2, ds / 2);
-  dc.DrawArc(-fl / 2, -ds / 2 - dr, -fl / 2 + dr, -ds / 2, -fl / 2, -ds / 2);
+  dc.DrawLine(-flh + dr, dsh, -flh + dr, -dsh);
+  dc.DrawArc(-flh + dr, dsh, -flh, dsh + dr, -flh, dsh);
+  dc.DrawArc(-flh, -dsh - dr, -flh + dr, -dsh, -flh, -dsh);
 
-  dc.DrawLine(fl / 2 - dr, ds / 2, fl / 2 - dr, -ds / 2);
-  dc.DrawArc(fl / 2, ds / 2 + dr, fl / 2 - dr, ds / 2, fl / 2, ds / 2);
-  dc.DrawArc(fl / 2 - dr, -ds / 2, fl / 2, -ds / 2 - dr, fl / 2, -ds / 2);
+  dc.DrawLine(flh - dr, dsh, flh - dr, -dsh);
+  dc.DrawArc(flh, dsh + dr, flh - dr, dsh, flh, dsh);
+  dc.DrawArc(flh - dr, -dsh, flh, -dsh - dr, flh, -dsh);
 
   // draw goals
   dc.SetBrush(wxBrush(wxColour(0, 0, 0), wxTRANSPARENT));
   dc.SetPen(wxPen(wxColour(255, 255, 255)));
-  dc.DrawLine(-fl / 2, gw / 2, -fl / 2 - gd, gw / 2);
-  dc.DrawLine(-fl / 2 - gd, gw / 2, -fl / 2 - gd, -gw / 2);
-  dc.DrawLine(-fl / 2 - gd, -gw / 2, -fl / 2, -gw / 2);
-  dc.DrawLine(fl / 2, gw / 2, fl / 2 + gd, gw / 2);
-  dc.DrawLine(fl / 2 + gd, gw / 2, fl / 2 + gd, -gw / 2);
-  dc.DrawLine(fl / 2 + gd, -gw / 2, fl / 2, -gw / 2);
+  dc.DrawLine(-flh, gwh, -flh - gd, gwh);
+  dc.DrawLine(-flh - gd, gwh, -flh - gd, -gwh);
+  dc.DrawLine(-flh - gd, -gwh, -flh, -gwh);
+  dc.DrawLine(flh, gwh, flh + gd, gwh);
+  dc.DrawLine(flh + gd, gwh, flh + gd, -gwh);
+  dc.DrawLine(flh + gd, -gwh, flh, -gwh);
 
-  // draw robots and ball
-  dc.SetBrush(wxBrush(wxColour(255, 125, 0)));
+  // draw ball
+  dc.SetBrush(wxBrush(wxColour(255, 128, 0)));
   dc.DrawCircle(wxPoint(w.ball.loc.x, w.ball.loc.y), 30);
 
+  // draw robots
+  dc.SetPen(wxNullPen);
   for (const auto &r : w.robots) {
     if (r.team == TeamBlue) {
       dc.SetBrush(wxBrush(wxColour(0, 0, 255)));
@@ -111,4 +136,11 @@ void wxFieldPanel::addGeometryUpdate(wxCommandEvent &event)
   SSL_GeometryData *geo_p = reinterpret_cast<SSL_GeometryData *>(event.GetClientData());
   geo.CopyFrom(*geo_p);
   delete geo_p;
+}
+
+void wxFieldPanel::addAutorefUpdate(wxCommandEvent &event)
+{
+  AutorefVariables *vars_p = reinterpret_cast<AutorefVariables *>(event.GetClientData());
+  vars = *vars_p;
+  delete vars_p;
 }

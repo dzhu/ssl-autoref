@@ -11,8 +11,8 @@ static const int MaxCameras = 4;
 enum Team : int
 {
   TeamBlue = 0,
-  TeamYellow,
-  TeamNone,
+  TeamYellow = 1,
+  TeamNone = 2,
 };
 static const int NumTeams = static_cast<int>(TeamNone);
 

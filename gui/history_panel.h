@@ -1,12 +1,12 @@
 #include <wx/wx.h>
 #include <deque>
 
-#include "referee_update.pb.h"
+#include "referee_call.pb.h"
 
 class wxAutorefHistoryPanel : public wxPanel
 {
   int max_items;
-  std::deque<RefereeUpdate> history;
+  std::deque<RefereeCall> history;
   wxSizer *sizer;
 
 public:

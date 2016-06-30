@@ -5,6 +5,10 @@
 
 SSL_Referee::Command teamCommand(TeamCommand cmd, Team team)
 {
+  if (team != TeamBlue && team != TeamYellow) {
+    team = RandomTeam();
+  }
+
 #define X(s) \
   case s:    \
     return (team == TeamBlue) ? SSL_Referee::s##_BLUE : SSL_Referee::s##_YELLOW
@@ -18,6 +22,7 @@ SSL_Referee::Command teamCommand(TeamCommand cmd, Team team)
     X(GOAL);
     X(BALL_PLACEMENT);
   }
+
 #undef X
 }
 
@@ -300,4 +305,12 @@ int8_t GuessBlueSide(const World &w)
     }
   }
   return static_cast<int8_t>(sign_nz(blue_right_weight));
+}
+
+Team RandomTeam()
+{
+  static std::default_random_engine generator;
+  static std::uniform_int_distribution<unsigned int> binary_dist;
+
+  return binary_dist(generator) ? TeamYellow : TeamBlue;
 }

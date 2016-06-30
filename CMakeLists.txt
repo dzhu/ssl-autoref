@@ -21,7 +21,7 @@ set (PROTO_FILES
   messages_robocup_ssl_geometry
   messages_robocup_ssl_wrapper
   referee
-  referee_update
+  referee_call
   rcon
   )
 

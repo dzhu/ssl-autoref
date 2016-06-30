@@ -9,7 +9,7 @@
 #include "messages_robocup_ssl_wrapper.pb.h"
 #include "rcon.pb.h"
 #include "referee.pb.h"
-#include "referee_update.pb.h"
+#include "referee_call.pb.h"
 
 #include "constants.h"
 #include "events.h"
@@ -38,7 +38,7 @@ protected:
 
   AutorefVariables vars;
 
-  RefereeUpdate update;
+  RefereeCall update;
 
   template <typename E>
   void addEvent()
@@ -49,6 +49,8 @@ protected:
   }
 
   bool new_stage, new_cmd;
+
+  bool state_updated;
 
   virtual bool doEvents(const World &w, bool ball_z_valid = false, float ball_z = 0) = 0;
 
@@ -95,9 +97,21 @@ public:
 
   SSL_Referee makeMessage();
   SSL_RefereeRemoteControlRequest makeRemote();
-  const RefereeUpdate &getUpdate();
+  const RefereeCall &getUpdate();
 
   void updateGeometry(const SSL_GeometryData &g);
   void updateVision(const SSL_DetectionFrame &d);
   void updateReferee(const SSL_Referee &r);
+
+  AutorefVariables getState()
+  {
+    return vars;
+  }
+
+  // after a call to updateVision, this should return true if something has
+  // happened
+  bool isStateUpdated()
+  {
+    return state_updated;
+  }
 };

@@ -3,7 +3,7 @@
 #include <wx/gbsizer.h>
 #include <wx/wx.h>
 
-#include "referee_update.pb.h"
+#include "referee_call.pb.h"
 
 class wxGameInfoPanel : public wxPanel
 {

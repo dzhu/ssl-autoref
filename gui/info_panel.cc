@@ -25,9 +25,9 @@ wxGameInfoPanel::wxGameInfoPanel(wxWindow *parent, wxWindowID id)
     auto score_sizer = new wxGridBagSizer(0, 0);
     score_panel->SetSizer(score_sizer);
 
-    blue_name_text = makeText(this, "<blue team>", name_font, blue_team_colour);
+    blue_name_text = makeText(this, "Blue", name_font, blue_team_colour);
     blue_score_text = makeText(this, "0", score_font);
-    yellow_name_text = makeText(this, "<yellow team>", name_font, yellow_team_colour);
+    yellow_name_text = makeText(this, "Yellow", name_font, yellow_team_colour);
     yellow_score_text = makeText(this, "0", score_font);
 
     score_sizer->Add(blue_name_text, gbp(0, 1), wxDefaultSpan, wxALIGN_CENTER_HORIZONTAL);

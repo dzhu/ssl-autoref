@@ -103,3 +103,5 @@ Team FlipTeam(Team team);
 uint64_t GetTimeMicros();
 
 int8_t GuessBlueSide(const World &w);
+
+Team RandomTeam();

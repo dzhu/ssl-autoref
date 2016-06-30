@@ -11,12 +11,15 @@ EvaluationAutoref::EvaluationAutoref(bool verbose_) : verbose(verbose_)
 
   addEvent<RefboxUpdateEvent>();
   addEvent<BallSpeedEvent>();
+  addEvent<GoalScoredEvent>();
   addEvent<BallExitEvent>();
   addEvent<BallTouchedEvent>();
   addEvent<LongDribbleEvent>();
   addEvent<KickTakenEvent>();
   addEvent<TooManyRobotsEvent>();
   addEvent<RobotSpeedEvent>();
+  addEvent<LongDribbleEvent>();
+  addEvent<BallStuckEvent>();
 }
 
 bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z)
@@ -32,12 +35,16 @@ bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z
     printf("Initializing blue side to %d.\n", vars.blue_side);
   }
 
+  state_updated = false;
+
   // printf("-- state: %s\n", ref_state_names[vars.state]);
   for (auto it = events.begin(); it < events.end(); ++it) {
     AutorefEvent *ev = *it;
     ev->process(w, ball_z_valid, ball_z);
 
     if (ev->firingNew()) {
+      state_updated = true;
+
       AutorefVariables new_vars = ev->getUpdate();
 
       const SSL_Referee &ref = getRefboxMessage();
@@ -94,9 +101,9 @@ bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z
 
         PRINT_DIFF("%.3f", stage_end);
         PRINT_DIFF("%.3f", kick_deadline);
-        PRINT_DIFF("%d", kick_team);
-        PRINT_DIFF("%X", kicker_id);
-        PRINT_DIFF("%d", touch_team);
+        PRINT_DIFF("%d", kicker.team);
+        PRINT_DIFF("%X", kicker.id);
+        PRINT_DIFF("%d", toucher.id);
         PRINT_DIFF("%d", blue_side);
       }
 
