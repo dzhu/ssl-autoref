@@ -31,4 +31,6 @@ void AutorefControlWxFrame::setAutoref(wxCommandEvent &evt)
     Bind(wxEVT_CHECKBOX, [c, ev](wxCommandEvent &evt) { ev->setEnabled(c->IsChecked()); }, c->GetId());
     GetSizer()->Add(c);
   }
+
+  Layout();
 }

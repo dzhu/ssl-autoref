@@ -10,23 +10,11 @@
 
 class Tracker
 {
-  bool cameras_seen[MaxCameras];
-  int num_cameras, num_cameras_seen;
-
-  bool ready;
-
-  World world;
-
-  vector2f last_ball;
-
-  void makeWorld();
-
-  unsigned int frames;
-
 public:
   struct Observation
   {
     bool valid;
+    int last_valid;
     double time;
     float conf;
     vector2f loc;
@@ -46,10 +34,25 @@ public:
     vector2f fitVelocity();
   };
 
+private:
+  bool cameras_seen[MaxCameras];
+  int num_cameras, num_cameras_seen;
+
+  bool ready;
+
+  World world;
+
+  void makeWorld();
+
+  unsigned int frames;
+
+  // Observation last_ball;
+
+public:
   ObjectTracker robots[NumTeams][MaxRobotIds];
   ObjectTracker ball;
 
-  Tracker() : frames(0), ready(false), last_ball(0, 0), num_cameras(0), num_cameras_seen(0)
+  Tracker() : frames(0), ready(false), num_cameras(0), num_cameras_seen(0)
   {
     for (bool &s : cameras_seen) {
       s = false;

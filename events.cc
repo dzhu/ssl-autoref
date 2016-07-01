@@ -258,7 +258,7 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   vector2f ball_loc;
 
   bool EXTRAPOLATE_RAW = true;
-  int MAX_EXTRAPOLATE_FRAMES = 4;
+  int MAX_EXTRAPOLATE_FRAMES = 5;
   int frames = 0;
   if (EXTRAPOLATE_RAW) {
     if (w.ball.visible()) {
@@ -562,6 +562,7 @@ void GoalScoredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
   // TODO dedup this and BallExitEvent
   bool EXTRAPOLATE_RAW = true;
+  int MAX_EXTRAPOLATE_FRAMES = 5;
   int frames = 0;
   if (EXTRAPOLATE_RAW) {
     // if we actually see the ball, record that
@@ -577,7 +578,7 @@ void GoalScoredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       vector2f p0, v0;
       linvel(ball_history, p0, v0);
 
-      frames = min(lost_cnt, 5);
+      frames = min(lost_cnt, MAX_EXTRAPOLATE_FRAMES);
       ball_loc = p0 + v0 * (frames + ball_history.size() - 1) * FramePeriod;
 
       vector2f b(ball_loc.x, fabs(ball_loc.y));

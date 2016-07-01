@@ -249,7 +249,6 @@ wxThread::ExitCode AutorefWxThread::Entry()
   {
     auto evt = new wxCommandEvent(wxEVT_CONSTRUCT_AUTOREF_UPDATE);
     evt->SetClientData(autoref);
-    puts("queue control");
     control_handler->QueueEvent(evt);
   }
 

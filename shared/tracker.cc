@@ -1,7 +1,10 @@
 #include "tracker.h"
 
+static constexpr int AFFINITY_PERSIST = 30;
+
 int Tracker::ObjectTracker::mergeObservations()
 {
+  int last_affinity = affinity;
   if (affinity < 0 || !obs[affinity].valid) {
     affinity = -1;
     for (int o = 0; o < MaxCameras; o++) {
@@ -11,6 +14,11 @@ int Tracker::ObjectTracker::mergeObservations()
       }
     }
   }
+
+  if (affinity < 0 && last_affinity >= 0 && obs[last_affinity].last_valid < AFFINITY_PERSIST) {
+    affinity = last_affinity;
+  }
+
   if (affinity != -1) {
     history.push_back(obs[affinity]);
     if (history.size() > VEL_SAMPLES) {
@@ -55,11 +63,9 @@ vector2f Tracker::ObjectTracker::fitVelocity()
 
 void Tracker::updateVision(const SSL_DetectionFrame &d)
 {
-  int camera = d.camera_id();
+  static const bool debug = false;
 
-  // if (num_cameras <= 0) {
-  //   num_cameras = 4;
-  // }
+  int camera = d.camera_id();
 
   // count how many cameras are sending, at first
   if (num_cameras <= 0) {
@@ -94,6 +100,7 @@ void Tracker::updateVision(const SSL_DetectionFrame &d)
   for (const auto &r : d.robots_blue()) {
     Observation &obs = robots[TeamBlue][r.robot_id()].obs[camera];
     obs.valid = true;
+    // obs.last_valid = 0;
     obs.time = time;
     obs.conf = r.confidence();
     obs.loc.set(r.x(), r.y());
@@ -102,27 +109,61 @@ void Tracker::updateVision(const SSL_DetectionFrame &d)
   for (const auto &r : d.robots_yellow()) {
     Observation &obs = robots[TeamYellow][r.robot_id()].obs[camera];
     obs.valid = true;
+    // obs.last_valid = 0;
     obs.time = time;
     obs.conf = r.confidence();
     obs.loc.set(r.x(), r.y());
     obs.angle = r.orientation();
   }
 
-  // take the ball from this camera that is closest to the last position of the ball
+  // take the ball from this camera that is closest to the last position of the
+  // ball and not too far away
+  float max_dist = HUGE_VALF;
+  vector2f last_ball_loc(0, 0);
+  if (ball.affinity >= 0) {
+    const Observation &last_ball = ball.obs[ball.affinity];
+    if (last_ball.last_valid < 30) {
+      max_dist = 10000 * FramePeriod * last_ball.last_valid;
+      last_ball_loc = last_ball.loc;
+    }
+    if (debug) {
+      printf("ball affinity: %d  last_valid: %d  last ball loc: <%7.3f,%7.3f>  max_dist %.3f\n",
+             ball.affinity,
+             last_ball.last_valid,
+             V2COMP(last_ball.loc),
+             max_dist);
+    }
+  }
+  else {
+    if (debug) {
+      puts("no ball affinity");
+    }
+  }
   if (d.balls().size() > 0) {
+    bool found = false;
     float min_dist = HUGE_VALF;
     SSL_DetectionBall closest;
     for (const auto &b : d.balls()) {
-      if (dist(last_ball, vector2f(b.x(), b.y())) < min_dist) {
+      float d = dist(last_ball_loc, vector2f(b.x(), b.y()));
+      if (d < min_dist && d < max_dist) {
         closest = b;
+        min_dist = d;
+        found = true;
       }
     }
 
-    Observation &obs = ball.obs[camera];
-    obs.valid = true;
-    obs.time = time;
-    obs.conf = closest.confidence();
-    obs.loc.set(closest.x(), closest.y());
+    if (found) {
+      Observation &obs = ball.obs[camera];
+      obs.valid = true;
+      // obs.last_valid = 0;
+      obs.time = time;
+      obs.conf = closest.confidence();
+      obs.loc.set(closest.x(), closest.y());
+
+      if (debug) {
+        printf("camera %d seen ball <%7.3f,%7.3f>  dist %7.3f\n", camera, V2COMP(obs.loc), min_dist);
+      }
+    }
   }
 
   if (!cameras_seen[camera]) {
@@ -132,6 +173,9 @@ void Tracker::updateVision(const SSL_DetectionFrame &d)
 
   ready = (num_cameras_seen == num_cameras);
   if (ready) {
+    if (debug) {
+      puts("\nready\n");
+    }
     // condense all observations and convert to World object
     makeWorld();
 
@@ -139,13 +183,25 @@ void Tracker::updateVision(const SSL_DetectionFrame &d)
     for (auto &team_robots : robots) {
       for (auto &robot : team_robots) {
         for (auto &obs : robot.obs) {
-          obs.valid = false;
+          if (obs.valid) {
+            obs.valid = false;
+            obs.last_valid = 1;
+          }
+          else {
+            obs.last_valid++;
+          }
         }
       }
     }
 
     for (auto &obs : ball.obs) {
-      obs.valid = false;
+      if (obs.valid) {
+        obs.valid = false;
+        obs.last_valid = 1;
+      }
+      else {
+        obs.last_valid++;
+      }
     }
 
     for (bool &s : cameras_seen) {
@@ -168,7 +224,7 @@ void Tracker::makeWorld()
       if (robot.mergeObservations() >= 0) {
         const Observation &obs = robot.obs[robot.affinity];
         WorldRobot wr;
-        wr.conf = obs.conf;
+        wr.conf = (obs.last_valid < 2) * obs.conf;
         wr.loc = obs.loc;
         wr.angle = obs.angle;
         wr.team = static_cast<Team>(team);
@@ -186,7 +242,7 @@ void Tracker::makeWorld()
   if (ball.mergeObservations() >= 0) {
     const Observation &obs = ball.obs[ball.affinity];
     WorldBall &wb = world.ball;
-    wb.conf = obs.conf;
+    wb.conf = (obs.last_valid < 2) * obs.conf;
     wb.loc = obs.loc;
     wb.vel = ball.fitVelocity();
 
