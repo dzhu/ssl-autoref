@@ -85,7 +85,7 @@ public:
   template <typename E>
   E *getEvent() const
   {
-    return (E *)event_map[&E::ID];
+    return (E *)event_map.at(&E::ID);
   }
 
   const SSL_Referee &getRefboxMessage()

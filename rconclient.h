@@ -37,10 +37,10 @@ public:
   RemoteClient() : sock(0){};
   bool open(const char *hostname, int port);
 
-  void sendRequest(const SSL_RefereeRemoteControlRequest &request);
+  bool sendRequest(const SSL_RefereeRemoteControlRequest &request);
 
-  void sendCard(SSL_RefereeRemoteControlRequest::CardInfo::CardType color,
+  bool sendCard(SSL_RefereeRemoteControlRequest::CardInfo::CardType color,
                 SSL_RefereeRemoteControlRequest::CardInfo::CardTeam team);
-  void sendStage(SSL_Referee::Stage stage);
-  void sendCommand(SSL_Referee::Command command);
+  bool sendStage(SSL_Referee::Stage stage);
+  bool sendCommand(SSL_Referee::Command command);
 };

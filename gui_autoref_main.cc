@@ -289,7 +289,9 @@ wxThread::ExitCode AutorefWxThread::Entry()
 
         if (autoref->isRemoteReady()) {
           if (rcon_opened) {
-            rcon.sendRequest(autoref->makeRemote());
+            if (!rcon.sendRequest(autoref->makeRemote())) {
+              rcon_opened = false;
+            }
           }
 
           if (autoref->tracker.isReady()) {

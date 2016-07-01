@@ -65,7 +65,7 @@ SSL_RefereeRemoteControlRequest RemoteClient::createMessage()
   return request;
 }
 
-void RemoteClient::sendRequest(const SSL_RefereeRemoteControlRequest &request)
+bool RemoteClient::sendRequest(const SSL_RefereeRemoteControlRequest &request)
 {
   // send request
   {
@@ -79,8 +79,12 @@ void RemoteClient::sendRequest(const SSL_RefereeRemoteControlRequest &request)
     if (request.has_stage()) {
       std::cout << "Sending stage: " << SSL_Referee::Stage_Name(request.stage()) << ".\n";
     }
-    sendFully(&messageLength, sizeof(messageLength));
-    sendFully(message.data(), message.size());
+    bool ret = true;
+    ret &= sendFully(&messageLength, sizeof(messageLength));
+    ret &= sendFully(message.data(), message.size());
+    if (!ret) {
+      return false;
+    }
     // std::cout << "OK\n";
   }
 
@@ -105,6 +109,8 @@ void RemoteClient::sendRequest(const SSL_RefereeRemoteControlRequest &request)
               << request.message_id() << ".\n";
   }
   std::cout << "Command result is: " << SSL_RefereeRemoteControlReply::Outcome_Name(reply.outcome()) << ".\n";
+
+  return true;
 }
 
 bool RemoteClient::open(const char *hostname, int port)
@@ -158,25 +164,25 @@ bool RemoteClient::open(const char *hostname, int port)
   return false;
 }
 
-void RemoteClient::sendCard(SSL_RefereeRemoteControlRequest::CardInfo::CardType color,
+bool RemoteClient::sendCard(SSL_RefereeRemoteControlRequest::CardInfo::CardType color,
                             SSL_RefereeRemoteControlRequest::CardInfo::CardTeam team)
 {
   SSL_RefereeRemoteControlRequest request = createMessage();
   request.mutable_card()->set_type(color);
   request.mutable_card()->set_team(team);
-  sendRequest(request);
+  return sendRequest(request);
 }
 
-void RemoteClient::sendStage(SSL_Referee::Stage stage)
+bool RemoteClient::sendStage(SSL_Referee::Stage stage)
 {
   SSL_RefereeRemoteControlRequest request = createMessage();
   request.set_stage(stage);
-  sendRequest(request);
+  return sendRequest(request);
 }
 
-void RemoteClient::sendCommand(SSL_Referee::Command command)
+bool RemoteClient::sendCommand(SSL_Referee::Command command)
 {
   SSL_RefereeRemoteControlRequest request = createMessage();
   request.set_command(command);
-  sendRequest(request);
+  return sendRequest(request);
 }

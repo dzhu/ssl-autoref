@@ -6,7 +6,7 @@
 
 EvaluationAutoref::EvaluationAutoref(bool verbose_) : verbose(verbose_)
 {
-  vars.state = REF_WAIT_STOP;
+  vars.state = REF_RUN;
   vars.stage = SSL_Referee::NORMAL_FIRST_HALF;
 
   addEvent<RefboxUpdateEvent>();
@@ -118,10 +118,16 @@ bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z
         printf("\n%s \x1b[33;1mPlease move the ball to <%.0f,%.0f>!\x1b[m\n", time_buf, V2COMP(new_vars.reset_loc));
       }
 
+      auto old_state = vars.state;
       vars = new_vars;
+      if (ev != getEvent<RefboxUpdateEvent>()) {
+        vars.state = old_state;
+      }
       vars.reset = false;
     }
   }
+
+  // printf("state: %s\n", ref_state_names[vars.state]);
 
   new_stage = (vars.stage != last_stage);
   new_cmd = (vars.cmd != last_command) && (vars.cmd != refbox_message.command());
