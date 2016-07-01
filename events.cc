@@ -60,6 +60,7 @@ const char RefboxUpdateEvent::ID;
 void RefboxUpdateEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 {
   const SSL_Referee &msg = ref->getRefboxMessage();
+  vars.cmd = msg.command();
   if (msg.command() == last_msg.command()) {
     return;
   }
@@ -115,8 +116,6 @@ void RefboxUpdateEvent::_process(const World &w, bool ball_z_valid, float ball_z
     default:
       break;
   }
-
-  vars.cmd = msg.command();
 
   fired = true;
   setDescription("Got refbox command: %s", SSL_Referee::Command_Name(msg.command()).c_str());
