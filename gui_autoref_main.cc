@@ -298,9 +298,12 @@ wxThread::ExitCode AutorefWxThread::Entry()
             const RefereeCall &orig_update = autoref->getUpdate();
             auto update = new RefereeCall();
             update->CopyFrom(orig_update);
-            auto evt = new wxCommandEvent(wxEVT_REF_UPDATE);
-            evt->SetClientData(update);
-            display_handler->QueueEvent(evt);
+
+            if (update->description().find("refbox") == std::string::npos) {
+              auto evt = new wxCommandEvent(wxEVT_REF_UPDATE);
+              evt->SetClientData(update);
+              display_handler->QueueEvent(evt);
+            }
           }
         }
       }

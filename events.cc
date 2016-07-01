@@ -60,10 +60,23 @@ const char RefboxUpdateEvent::ID;
 void RefboxUpdateEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 {
   const SSL_Referee &msg = ref->getRefboxMessage();
-  vars.cmd = msg.command();
-  if (msg.command() == last_msg.command()) {
+
+  if (vars.cmd != msg.command() || vars.stage != msg.stage()) {
+    disagree_cnt++;
+  }
+  else {
+    disagree_cnt = 0;
+  }
+
+  if (disagree_cnt < 120 && msg.command() == last_msg.command() && msg.stage() == last_msg.stage()) {
     return;
   }
+
+  disagree_cnt = 0;
+  last_msg = msg;
+  fired = true;
+  vars.cmd = msg.command();
+  vars.stage = msg.stage();
 
   switch (msg.command()) {
     case SSL_Referee::HALT:
@@ -232,6 +245,7 @@ void BallStuckEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     last_ball_loc = w.ball.loc;
 
     if (stuck_count > 12) {
+      stuck_count = 0;
       fired = true;
       vars.cmd = SSL_Referee::STOP;
       vars.state = REF_WAIT_STOP;
@@ -379,6 +393,7 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
         else if (own_dist < MaxRobotRadius) {
           vars.state = REF_WAIT_STOP;
           vars.cmd = SSL_Referee::STOP;
+          vars.next_cmd = SSL_Referee::FORCE_START;
 
           setDescription("Multiple defenders (partial) (by %s %X)", TeamName(vars.toucher.team), vars.toucher.id);
           // TODO send card

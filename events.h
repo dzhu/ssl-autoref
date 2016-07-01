@@ -198,6 +198,8 @@ class RefboxUpdateEvent : public AutorefEvent
 {
   SSL_Referee last_msg;
 
+  int disagree_cnt;
+
 public:
   static const char ID = 0;
   void _process(const World &w, bool ball_z_valid, float ball_z);
@@ -206,7 +208,7 @@ public:
     return "receive updates from refbox";
   }
 
-  RefboxUpdateEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
+  RefboxUpdateEvent(BaseAutoref *_ref) : AutorefEvent(_ref), disagree_cnt(0)
   {
   }
 };
