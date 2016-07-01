@@ -18,7 +18,6 @@ EvaluationAutoref::EvaluationAutoref(bool verbose_) : verbose(verbose_)
   addEvent<KickTakenEvent>();
   addEvent<TooManyRobotsEvent>();
   addEvent<RobotSpeedEvent>();
-  addEvent<LongDribbleEvent>();
   addEvent<BallStuckEvent>();
 }
 

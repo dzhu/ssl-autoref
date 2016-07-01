@@ -21,6 +21,8 @@
 #include "referee_call.pb.h"
 #include "udp.h"
 
+#include "gui/control_frame.h"
+#include "gui/event_types.h"
 #include "gui/field_panel.h"
 #include "gui/gui_utils.h"
 #include "gui/history_item.h"
@@ -28,21 +30,6 @@
 #include "gui/info_panel.h"
 
 using gbp = wxGBPosition;
-
-extern const wxEventType wxEVT_REF_UPDATE;
-const wxEventType wxEVT_REF_UPDATE = wxNewEventType();
-
-extern const wxEventType wxEVT_GAME_UPDATE;
-const wxEventType wxEVT_GAME_UPDATE = wxNewEventType();
-
-extern const wxEventType wxEVT_WORLD_UPDATE;
-const wxEventType wxEVT_WORLD_UPDATE = wxNewEventType();
-
-extern const wxEventType wxEVT_GEOMETRY_UPDATE;
-const wxEventType wxEVT_GEOMETRY_UPDATE = wxNewEventType();
-
-extern const wxEventType wxEVT_AUTOREF_UPDATE;
-const wxEventType wxEVT_AUTOREF_UPDATE = wxNewEventType();
 
 enum OptionIndex
 {
@@ -66,22 +53,16 @@ const option::Descriptor options[] = {
 int g_argc;
 char **g_argv;
 
-class AutorefWxApp : public wxApp
-{
-public:
-  virtual bool OnInit();
-
-private:
-  wxThread *network_thread;
-};
-
 class AutorefWxFrame : public wxFrame
 {
 public:
   AutorefWxFrame(const wxString &title);
 
 private:
-  void OnQuit(wxCommandEvent &event);
+  void OnQuit(wxCommandEvent &event)
+  {
+    Close(true);
+  }
 
   wxGameInfoPanel *info_panel;
   wxAutorefHistoryPanel *history_panel;
@@ -123,20 +104,36 @@ EVT_COMMAND(wxID_ANY, wxEVT_GEOMETRY_UPDATE, AutorefWxFrame::addGeometryUpdate)
 EVT_COMMAND(wxID_ANY, wxEVT_AUTOREF_UPDATE, AutorefWxFrame::addAutorefUpdate)
 END_EVENT_TABLE()
 
+class AutorefWxApp : public wxApp
+{
+public:
+  virtual bool OnInit();
+
+  AutorefWxFrame *display_frame;
+  AutorefControlWxFrame *control_frame;
+
+private:
+  wxThread *network_thread;
+};
+
 class AutorefWxThread : public wxThread
 {
   int argc;
   char **argv;
 
 public:
-  AutorefWxThread(AutorefWxFrame *_handler) : wxThread(wxTHREAD_DETACHED), handler(_handler), argc(g_argc), argv(g_argv)
+  AutorefWxThread(AutorefWxFrame *display_frame, AutorefControlWxFrame *control_frame)
+      : wxThread(wxTHREAD_DETACHED),
+        display_handler(display_frame->GetEventHandler()),
+        control_handler(control_frame->GetEventHandler()),
+        argc(g_argc),
+        argv(g_argv)
   {
   }
-  // ~AutorefWxThread();
 
 protected:
   virtual wxThread::ExitCode Entry();
-  AutorefWxFrame *handler;
+  wxEvtHandler *display_handler, *control_handler;
 };
 
 bool AutorefWxApp::OnInit()
@@ -145,12 +142,15 @@ bool AutorefWxApp::OnInit()
     return false;
   }
 
-  AutorefWxFrame *frame = new AutorefWxFrame(_T("CMDragons autoref"));
-  frame->Show(true);
+  display_frame = new AutorefWxFrame(_T("CMDragons autoref"));
+  control_frame = new AutorefControlWxFrame(_T("CMDragons autoref control"));
 
-  network_thread = new AutorefWxThread(frame);
+  network_thread = new AutorefWxThread(display_frame, control_frame);
   network_thread->Create();
   network_thread->Run();
+
+  display_frame->Show(true);
+  control_frame->Show(true);
 
   return true;
 }
@@ -191,11 +191,6 @@ AutorefWxFrame::AutorefWxFrame(const wxString &title) : wxFrame(nullptr, wxID_AN
   info_panel->SetMinSize(wxSize(0, info_panel->GetMinHeight()));
 
   sizer->Layout();
-}
-
-void AutorefWxFrame::OnQuit(wxCommandEvent &event)
-{
-  Close(true);
 }
 
 wxThread::ExitCode AutorefWxThread::Entry()
@@ -248,6 +243,16 @@ wxThread::ExitCode AutorefWxThread::Entry()
     autoref = new Autoref(verbose);
   }
 
+  // notify the control frame about this autoref instance (TODO: do this without
+  // this communication across threads; maybe parse arguments and construct in
+  // OnInit?)
+  {
+    auto evt = new wxCommandEvent(wxEVT_CONSTRUCT_AUTOREF_UPDATE);
+    evt->SetClientData(autoref);
+    puts("queue control");
+    control_handler->QueueEvent(evt);
+  }
+
   SSL_WrapperPacket vision_msg;
   SSL_Referee ref_msg;
 
@@ -271,7 +276,7 @@ wxThread::ExitCode AutorefWxThread::Entry()
           if (autoref->tracker.getWorld(*w)) {
             auto evt = new wxCommandEvent(wxEVT_WORLD_UPDATE);
             evt->SetClientData(w);
-            handler->GetEventHandler()->QueueEvent(evt);
+            display_handler->QueueEvent(evt);
           }
         }
 
@@ -280,7 +285,7 @@ wxThread::ExitCode AutorefWxThread::Entry()
           *vars = autoref->getState();
           auto evt = new wxCommandEvent(wxEVT_AUTOREF_UPDATE);
           evt->SetClientData(vars);
-          handler->GetEventHandler()->QueueEvent(evt);
+          display_handler->QueueEvent(evt);
         }
 
         if (autoref->isRemoteReady()) {
@@ -294,7 +299,7 @@ wxThread::ExitCode AutorefWxThread::Entry()
             update->CopyFrom(orig_update);
             auto evt = new wxCommandEvent(wxEVT_REF_UPDATE);
             evt->SetClientData(update);
-            handler->GetEventHandler()->QueueEvent(evt);
+            display_handler->QueueEvent(evt);
           }
         }
       }
@@ -305,7 +310,7 @@ wxThread::ExitCode AutorefWxThread::Entry()
         geo->CopyFrom(vision_msg.geometry());
         auto evt = new wxCommandEvent(wxEVT_GEOMETRY_UPDATE);
         evt->SetClientData(geo);
-        handler->GetEventHandler()->QueueEvent(evt);
+        display_handler->QueueEvent(evt);
       }
     }
     if (FD_ISSET(ref_net.getFd(), &read_fds) && ref_net.recv(ref_msg)) {
@@ -315,7 +320,7 @@ wxThread::ExitCode AutorefWxThread::Entry()
       update->CopyFrom(ref_msg);
       auto evt = new wxCommandEvent(wxEVT_GAME_UPDATE);
       evt->SetClientData(update);
-      handler->GetEventHandler()->QueueEvent(evt);
+      display_handler->QueueEvent(evt);
     }
   }
 }

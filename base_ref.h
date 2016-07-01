@@ -1,6 +1,8 @@
 #pragma once
+
 #include <cstdint>
 
+#include <algorithm>
 #include <deque>
 #include <map>
 
@@ -113,5 +115,10 @@ public:
   bool isStateUpdated()
   {
     return state_updated;
+  }
+
+  template<typename Fun>
+  void forEachEvent(Fun f){
+    std::for_each(events.begin(), events.end(), f);
   }
 };

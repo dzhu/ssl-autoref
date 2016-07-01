@@ -84,6 +84,8 @@ add_executable (gui_autoref
   shared/util.cc
   touches.cc
 
+  gui/control_frame.cc
+  gui/event_types.cc
   gui/history_item.cc
   gui/history_panel.cc
   gui/info_panel.cc

@@ -203,7 +203,7 @@ public:
   void _process(const World &w, bool ball_z_valid, float ball_z);
   const char *name() const
   {
-    return "RefboxUpdateEvent";
+    return "receive updates from refbox";
   }
 
   RefboxUpdateEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
@@ -240,7 +240,7 @@ public:
   void _process(const World &w, bool ball_z_valid, float ball_z);
   const char *name() const
   {
-    return "BallSpeedEvent";
+    return "ball goes too fast";
   }
 
   BallSpeedEvent(BaseAutoref *_ref) : AutorefEvent(_ref), cnt(0), last_loc(0, 0), last_time(0)
@@ -262,7 +262,7 @@ public:
   void _process(const World &w, bool ball_z_valid, float ball_z);
   const char *name() const
   {
-    return "BallStuckEvent";
+    return "ball gets stuck in play";
   }
 
   BallStuckEvent(BaseAutoref *_ref) : AutorefEvent(_ref), stuck_count(0), wait_frames(0), last_ball_loc(0, 0)
@@ -304,7 +304,7 @@ public:
   void _process(const World &w, bool ball_z_valid, float ball_z);
   const char *name() const
   {
-    return "BallExitEvent";
+    return "ball exits the field";
   }
 
   BallExitEvent(BaseAutoref *_ref)
@@ -329,7 +329,7 @@ public:
   void _process(const World &w, bool ball_z_valid, float ball_z);
   const char *name() const
   {
-    return "BallTouchedEvent";
+    return "ball is touched";
   }
 
   BallTouchedEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
@@ -366,7 +366,7 @@ public:
   void _process(const World &w, bool ball_z_valid, float ball_z);
   const char *name() const
   {
-    return "KickTakenEvent";
+    return "a kick is taken";
   }
 
   KickTakenEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
@@ -405,7 +405,7 @@ public:
   void _process(const World &w, bool ball_z_valid, float ball_z);
   const char *name() const
   {
-    return "GoalScoredEvent";
+    return "a goal is scored";
   }
 
   GoalScoredEvent(BaseAutoref *_ref) : AutorefEvent(_ref), last_ball_loc(0, 0), cnt(0), lost_cnt(0), stop_cnt(0)
@@ -434,7 +434,7 @@ public:
   void _process(const World &w, bool ball_z_valid, float ball_z);
   const char *name() const
   {
-    return "LongDribbleEvent";
+    return "a robot dribbles the ball too far";
   }
 
   LongDribbleEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
@@ -466,7 +466,7 @@ public:
   void _process(const World &w, bool ball_z_valid, float ball_z);
   const char *name() const
   {
-    return "TooManyRobotsEvent";
+    return "a team has too many robots";
   }
 
   TooManyRobotsEvent(BaseAutoref *_ref) : AutorefEvent(_ref), blue_frames(0), yellow_frames(0)
@@ -485,7 +485,7 @@ public:
   void _process(const World &w, bool ball_z_valid, float ball_z);
   const char *name() const
   {
-    return "RobotSpeedEvent";
+    return "a robot moves too fast during game off";
   }
 
   RobotSpeedEvent(BaseAutoref *_ref) : AutorefEvent(_ref)

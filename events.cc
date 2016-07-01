@@ -232,7 +232,7 @@ void BallStuckEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     }
     last_ball_loc = w.ball.loc;
 
-    if (stuck_count > 10) {
+    if (stuck_count > 12) {
       fired = true;
       vars.cmd = SSL_Referee::STOP;
       vars.state = REF_WAIT_STOP;
