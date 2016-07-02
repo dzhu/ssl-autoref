@@ -3,6 +3,11 @@
 #include "geomalgo.h"
 #include "util.h"
 
+// bool isStageGameOn(SSL_Referee::Stage stage)
+// {
+//   switch(stage)
+// }
+
 SSL_Referee::Command teamCommand(TeamCommand cmd, Team team)
 {
   if (team != TeamBlue && team != TeamYellow) {

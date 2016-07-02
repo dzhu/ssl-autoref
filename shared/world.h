@@ -35,6 +35,8 @@ struct WorldBall
   {
     return conf > .1;
   }
+
+  WorldBall() : loc(0, 0), vel(0, 0), conf(0) {}
 };
 
 struct World

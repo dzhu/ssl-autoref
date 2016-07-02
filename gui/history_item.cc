@@ -13,7 +13,18 @@ IMPLEMENT_DYNAMIC_CLASS(wxRefereeHistoryItem, wxPanel);
 using gbp = wxGBPosition;
 
 wxRefereeHistoryItem::wxRefereeHistoryItem(wxWindow *parent, wxWindowID id, RefereeCall _update)
-    : wxPanel(parent, id), sizer(new wxStaticBoxSizer(wxVERTICAL, this)), update(_update), emph(true)
+    : wxPanel(parent, id),
+      sizer(new wxStaticBoxSizer(wxVERTICAL, this)),
+      update(_update),
+      emph(true),
+      command_label(nullptr),
+      command_text(nullptr),
+      next_label(nullptr),
+      next_text(nullptr),
+      description_label(nullptr),
+      description_text(nullptr),
+      stage_time_label(nullptr),
+      stage_time_text(nullptr)
 {
   create_time = GetTimeMicros();
 
@@ -129,5 +140,5 @@ void wxRefereeHistoryItem::OnTimer(wxTimerEvent &event)
 
 wxRefereeHistoryItem::~wxRefereeHistoryItem()
 {
-  delete animate_timer;
+  // delete animate_timer;
 }

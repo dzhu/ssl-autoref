@@ -4,7 +4,7 @@
 #include "autoref.h"
 #include "events.h"
 
-BaseAutoref::BaseAutoref()
+BaseAutoref::BaseAutoref() : state_updated(false)
 {
   have_geometry = new_refbox = false;
   game_on = false;

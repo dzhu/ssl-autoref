@@ -10,7 +10,8 @@ END_EVENT_TABLE()
 
 using gbp = wxGBPosition;
 
-AutorefControlWxFrame::AutorefControlWxFrame(const wxString &title) : wxFrame(nullptr, wxID_ANY, title)
+AutorefControlWxFrame::AutorefControlWxFrame(const wxString &title)
+    : wxFrame(nullptr, wxID_ANY, title), autoref(nullptr)
 {
   wxIcon icon(_T("icon.gif"), wxBITMAP_TYPE_GIF);
   SetIcon(icon);

@@ -20,6 +20,8 @@ enum TeamCommand
   BALL_PLACEMENT,
 };
 
+// bool isStageGameOn(SSL_Referee::Stage stage);
+
 SSL_Referee::Command teamCommand(TeamCommand cmd, Team team);
 
 struct tvec

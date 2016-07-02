@@ -756,6 +756,13 @@ void TooManyRobotsEvent::_process(const World &w, bool ball_z_valid, float ball_
     }
   }
 
+  // printf("br %d by %d  yr %d yy %d\n",
+  //        msg.blue().red_cards(),
+  //        msg.blue().yellow_card_times_size(),
+  //        msg.yellow().red_cards(),
+  //        msg.yellow().yellow_card_times_size());
+  // printf("b %d/%d  y %d/%d\n", n_blue, max_blue, n_yellow, max_yellow);
+
   if (n_blue > max_blue) {
     blue_frames++;
 

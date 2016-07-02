@@ -7,7 +7,7 @@ void wxAutorefHistoryPanel::addUpdate(wxCommandEvent &event)
 {
   RefereeCall *update_p = reinterpret_cast<RefereeCall *>(event.GetClientData());
   RefereeCall update = *update_p;
-  delete update_p;
+  // delete update_p;
 
   // set current first item to small
   if (sizer->GetItemCount() > 0) {
@@ -24,7 +24,7 @@ void wxAutorefHistoryPanel::addUpdate(wxCommandEvent &event)
   if (sizer->GetItemCount() > max_items) {
     wxSizerItem *last_item = sizer->GetItem(max_items);
     sizer->Detach(last_item->GetWindow());
-    delete last_item->GetWindow();
+    // delete last_item->GetWindow();
   }
 
   sizer->Layout();

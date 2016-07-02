@@ -15,10 +15,13 @@ wxGameInfoPanel::wxGameInfoPanel(wxWindow *parent, wxWindowID id)
 {
   SetSizer(sizer);
 
-  wxFont label_font(wxFontInfo(25).Family(wxFONTFAMILY_DEFAULT).Italic());
-  wxFont text_font(wxFontInfo(25).Family(wxFONTFAMILY_DEFAULT));
+  wxFont label_font(wxFontInfo(30).Family(wxFONTFAMILY_DEFAULT).Italic());
+  wxFont text_font(wxFontInfo(30).Family(wxFONTFAMILY_DEFAULT));
   wxFont name_font(wxFontInfo(40).Family(wxFONTFAMILY_DEFAULT));
   wxFont score_font(wxFontInfo(80).Family(wxFONTFAMILY_DEFAULT));
+
+  wxFont time_label_font(wxFontInfo(50).Family(wxFONTFAMILY_DEFAULT).Italic());
+  wxFont time_text_font(wxFontInfo(50).Family(wxFONTFAMILY_DEFAULT));
 
   {
     wxPanel *score_panel = new wxPanel(this, wxID_ANY);
@@ -54,20 +57,20 @@ wxGameInfoPanel::wxGameInfoPanel(wxWindow *parent, wxWindowID id)
     ref_panel->SetSizer(ref_sizer);
 
     wxStaticText *stage_label = makeText(this, "Stage:", label_font, wxColour(0, 0, 0));
-    wxStaticText *time_label = makeText(this, "Stage time left:", label_font, wxColour(0, 0, 0));
+    wxStaticText *time_label = makeText(this, "Time left:", time_label_font, wxColour(0, 0, 0));
     wxStaticText *command_label = makeText(this, "Command:", label_font, wxColour(0, 0, 0));
 
     stage_text = makeText(this, "", text_font);
-    time_text = makeText(this, "", text_font);
+    time_text = makeText(this, "", time_text_font);
     command_text = makeText(this, "", text_font);
 
-    ref_sizer->Add(command_label, gbp(0, 0), wxDefaultSpan);
-    ref_sizer->Add(stage_label, gbp(1, 0), wxDefaultSpan);
-    ref_sizer->Add(time_label, gbp(2, 0), wxDefaultSpan);
+    ref_sizer->Add(time_label, gbp(0, 0), wxDefaultSpan);
+    ref_sizer->Add(command_label, gbp(1, 0), wxDefaultSpan);
+    ref_sizer->Add(stage_label, gbp(2, 0), wxDefaultSpan);
 
-    ref_sizer->Add(command_text, gbp(0, 2), wxDefaultSpan);
-    ref_sizer->Add(stage_text, gbp(1, 2), wxDefaultSpan);
-    ref_sizer->Add(time_text, gbp(2, 2), wxDefaultSpan);
+    ref_sizer->Add(time_text, gbp(0, 2), wxDefaultSpan);
+    ref_sizer->Add(command_text, gbp(1, 2), wxDefaultSpan);
+    ref_sizer->Add(stage_text, gbp(2, 2), wxDefaultSpan);
 
     ref_sizer->Add(50, 0, gbp(0, 1));
 
@@ -79,7 +82,7 @@ void wxGameInfoPanel::addUpdate(wxCommandEvent &event)
 {
   SSL_Referee *update_p = reinterpret_cast<SSL_Referee *>(event.GetClientData());
   SSL_Referee update = *update_p;
-  delete update_p;
+  // delete update_p;
 
   std::string blue_name = update.blue().name();
   std::string yellow_name = update.yellow().name();
@@ -100,6 +103,13 @@ void wxGameInfoPanel::addUpdate(wxCommandEvent &event)
   stage_text->SetLabel(ws(stageDisplayName(update.stage())));
   command_text->SetLabel(ws(commandDisplayName(update.command())));
   time_text->SetLabel(formatTime(update.stage_time_left()));
+
+  if (1 || update.stage_time_left() > 0) {
+    time_text->SetBackgroundColour(wxColour(255, 64, 64));
+  }
+  else {
+    time_text->SetBackgroundColour(wxNullColour);
+  }
 
   sizer->Layout();
 }

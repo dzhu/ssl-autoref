@@ -19,6 +19,8 @@ public:
     float conf;
     vector2f loc;
     float angle;
+
+    Observation() : valid(false), last_valid(0), time(0), conf(0), loc(0, 0), angle(0) {}
   };
 
   struct ObjectTracker

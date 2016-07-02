@@ -69,7 +69,11 @@ bool UDP::open(const char *server_host, int port, bool blocking)
     fflush(stderr);
   }
 
+  socklen_t len = 0;
   int yes = 1;
+  getsockopt(fd, IPPROTO_IP, IP_MULTICAST_LOOP, reinterpret_cast<char *>(&yes), &len);
+  printf("loop %d\n", yes);
+
   // allow packets to be received on this host
   if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_LOOP, reinterpret_cast<const char *>(&yes), sizeof(yes)) != 0) {
     fprintf(stderr, "ERROR WHEN SETTING IP_MULTICAST_LOOP ON UDP SOCKET\n");

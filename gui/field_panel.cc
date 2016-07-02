@@ -41,7 +41,7 @@ void wxFieldPanel::render(wxDC &dc)
   double gd = dims.goal_depth(), gwh = dims.goal_width() / 2;
   double dr = dims.defense_radius(), dsh = dims.defense_stretch() / 2;
 
-  double margin = 250;
+  double margin = 500;
   double min_x = -flh - margin;
   double max_x = flh + margin;
   double min_y = -fwh - margin;
@@ -128,19 +128,19 @@ void wxFieldPanel::addUpdate(wxCommandEvent &event)
 {
   World *world_p = reinterpret_cast<World *>(event.GetClientData());
   w = *world_p;
-  delete world_p;
+  // delete world_p;
 }
 
 void wxFieldPanel::addGeometryUpdate(wxCommandEvent &event)
 {
   SSL_GeometryData *geo_p = reinterpret_cast<SSL_GeometryData *>(event.GetClientData());
   geo.CopyFrom(*geo_p);
-  delete geo_p;
+  // delete geo_p;
 }
 
 void wxFieldPanel::addAutorefUpdate(wxCommandEvent &event)
 {
   AutorefVariables *vars_p = reinterpret_cast<AutorefVariables *>(event.GetClientData());
   vars = *vars_p;
-  delete vars_p;
+  // delete vars_p;
 }

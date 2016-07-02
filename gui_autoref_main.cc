@@ -167,7 +167,7 @@ AutorefWxFrame::AutorefWxFrame(const wxString &title) : wxFrame(nullptr, wxID_AN
   sizer->Add(15, 15, gbp(4, 2));
   sizer->Add(15, 15, gbp(0, 4));
   sizer->AddGrowableRow(3);
-  sizer->AddGrowableCol(1, 3);
+  sizer->AddGrowableCol(1, 4);
   sizer->AddGrowableCol(3, 5);
 
   wxFont top_label_font(45, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_ITALIC, wxFONTWEIGHT_NORMAL);
