@@ -1,4 +1,12 @@
 cmake_minimum_required (VERSION 2.8)
+
+# https://crascit.com/2016/04/09/using-ccache-with-cmake/
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+  message  (STATUS "Using ccache: ${CCACHE_PROGRAM}")
+  set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
+endif()
+
 project (autoref)
 
 #### miscellaneous compile settings
@@ -21,7 +29,7 @@ set (PROTO_FILES
   messages_robocup_ssl_geometry
   messages_robocup_ssl_wrapper
   ssl_autoref
-  referee
+  ssl_referee
   referee_call
   rcon
   )

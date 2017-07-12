@@ -4,7 +4,7 @@
 #include "autoref.h"
 #include "events.h"
 
-BaseAutoref::BaseAutoref() : state_updated(false)
+BaseAutoref::BaseAutoref() : state_updated(false), message_ready(false)
 {
   have_geometry = new_refbox = false;
   game_on = false;
@@ -38,7 +38,7 @@ void BaseAutoref::updateReferee(const SSL_Referee &r)
 
 bool BaseAutoref::isMessageReady()
 {
-  return tracker.isReady();
+  return message_ready;
 }
 
 bool BaseAutoref::isRemoteReady()
@@ -97,7 +97,7 @@ SSL_RefereeRemoteControlRequest BaseAutoref::makeRemote()
   return msg;
 }
 
-const RefereeCall &BaseAutoref::getUpdate()
+const ssl::SSL_Autoref &BaseAutoref::getUpdate()
 {
-  return update;
+  return message;
 }

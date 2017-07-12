@@ -10,8 +10,8 @@
 
 #include "messages_robocup_ssl_wrapper.pb.h"
 #include "rcon.pb.h"
-#include "referee.pb.h"
-#include "referee_call.pb.h"
+#include "ssl_referee.pb.h"
+#include "ssl_autoref.pb.h"
 
 #include "constants.h"
 #include "events.h"
@@ -40,7 +40,8 @@ protected:
 
   AutorefVariables vars;
 
-  RefereeCall update;
+  ssl::SSL_Autoref message;
+  bool message_ready;
 
   template <typename E>
   void addEvent()
@@ -99,7 +100,7 @@ public:
 
   SSL_Referee makeMessage();
   SSL_RefereeRemoteControlRequest makeRemote();
-  const RefereeCall &getUpdate();
+  const ssl::SSL_Autoref &getUpdate();
 
   void updateGeometry(const SSL_GeometryData &g);
   void updateVision(const SSL_DetectionFrame &d);

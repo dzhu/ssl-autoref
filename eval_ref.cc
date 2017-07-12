@@ -26,7 +26,6 @@ bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z
   static int n = 0;
   bool ret = false;
 
-  AutorefVariables last_vars = vars;
   SSL_Referee::Stage last_stage = vars.stage;
   SSL_Referee::Command last_command = vars.cmd;
 
@@ -35,6 +34,8 @@ bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z
     printf("Initializing blue side to %d.\n", vars.blue_side);
   }
 
+  message.Clear();
+  message_ready = false;
   state_updated = false;
 
   // printf("-- state: %s\n", ref_state_names[vars.state]);
@@ -58,23 +59,29 @@ bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z
       tm *st = localtime(&tt);
       strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", st);
 
-      update.Clear();
-      update.set_timestamp(w.time * 1e6);
-      update.set_stage_time_left(ref.stage_time_left());
+      if (ev->getMessage(message)) {
+        message_ready = true;
 
-      if (ev->getDescription().size() > 0) {
-        update.set_description(ev->getDescription());
-      }
-      if (new_vars.cmd != vars.cmd) {
-        update.set_command(new_vars.cmd);
+        message.set_command_timestamp(GetTimeMicros());
 
-        if (new_vars.cmd == SSL_Referee::STOP || new_vars.cmd == SSL_Referee::PREPARE_KICKOFF_YELLOW
-            || new_vars.cmd == SSL_Referee::PREPARE_KICKOFF_BLUE
-            || new_vars.cmd == SSL_Referee::PREPARE_PENALTY_YELLOW
-            || new_vars.cmd == SSL_Referee::PREPARE_PENALTY_BLUE) {
-          update.set_next_command(new_vars.next_cmd);
-        }
+        auto timestamp = message.mutable_game_timestamp();
+        timestamp->set_game_stage(refbox_message.stage());
+        timestamp->set_stage_time_left(refbox_message.stage_time_left());
       }
+
+      // if (ev->getDescription().size() > 0) {
+      //   update.set_description(ev->getDescription());
+      // }
+      // if (new_vars.cmd != vars.cmd) {
+      //   update.set_command(new_vars.cmd);
+
+      //   if (new_vars.cmd == SSL_Referee::STOP || new_vars.cmd == SSL_Referee::PREPARE_KICKOFF_YELLOW
+      //       || new_vars.cmd == SSL_Referee::PREPARE_KICKOFF_BLUE
+      //       || new_vars.cmd == SSL_Referee::PREPARE_PENALTY_YELLOW
+      //       || new_vars.cmd == SSL_Referee::PREPARE_PENALTY_BLUE) {
+      //     update.set_next_command(new_vars.next_cmd);
+      //   }
+      // }
 
       if (verbose) {
         printf("\n%ld.%06ld %s event fired: %s\n", t0 / 1000000, t0 % 1000000, time_buf, ev->name());

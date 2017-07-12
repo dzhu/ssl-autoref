@@ -6,15 +6,14 @@
 
 #include <cstdarg>
 
-#include "referee.pb.h"
-
 #include "constants.h"
 #include "runqueue.h"
 #include "touches.h"
 #include "util.h"
 #include "world.h"
 
-#include "referee.pb.h"
+#include "ssl_autoref.pb.h"
+#include "ssl_referee.pb.h"
 
 using namespace std;
 
@@ -71,6 +70,8 @@ struct AutorefVariables
 
   RobotID kicker;
   RobotID toucher;
+  double touch_time;
+
   vector2f touch_loc;
 
   int8_t blue_side;
@@ -113,6 +114,8 @@ protected:
   bool fired, fired_last;
   AutorefVariables vars;
   string description;
+  ssl::SSL_Autoref autoref_msg;
+  bool autoref_msg_valid;
 
   bool isEnabled()
   {
@@ -131,6 +134,32 @@ protected:
     va_end(al);
   }
 
+  void setReplayTimes(double t0, double t1)
+  {
+    auto replay = autoref_msg.mutable_replay();
+    replay->set_start_timestamp(1e6 * t0);
+    replay->set_end_timestamp(1e6 * t1);
+  }
+
+  void setFoulMessage(ssl::SSL_Autoref::RuleInfringement::FoulType type, Team offending_team)
+  {
+    auto foul = autoref_msg.mutable_foul();
+    foul->set_foul_type(type);
+    foul->set_offending_team(offending_team == TeamBlue ? ssl::SSL_Autoref::BLUE : ssl::SSL_Autoref::YELLOW);
+  }
+
+  void addFoulOffender(int id)
+  {
+    auto foul = autoref_msg.mutable_foul();
+    foul->add_offending_robots(id);
+  }
+
+  void setFoulMessage(ssl::SSL_Autoref::RuleInfringement::FoulType type, RobotID offending_robot)
+  {
+    setFoulMessage(type, offending_robot.team);
+    addFoulOffender(offending_robot.id);
+  }
+
 public:
   void process(const World &w, bool ball_z_valid, float ball_z)
   {
@@ -142,6 +171,8 @@ public:
     }
 
     vars = refVars();
+    autoref_msg.Clear();
+    autoref_msg_valid = false;
     _process(w, ball_z_valid, ball_z);
   }
 
@@ -168,6 +199,12 @@ public:
   string getDescription() const
   {
     return description;
+  }
+
+  bool getMessage(ssl::SSL_Autoref &msg) const
+  {
+    msg = autoref_msg;
+    return autoref_msg_valid;
   }
 
   AutorefEvent(BaseAutoref *_ref) : ref(_ref), fired(false), fired_last(false), enabled(true)

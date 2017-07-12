@@ -12,7 +12,7 @@
 #include "messages_robocup_ssl_wrapper.pb.h"
 #include "optionparser.h"
 #include "rconclient.h"
-#include "referee.pb.h"
+#include "ssl_referee.pb.h"
 #include "udp.h"
 
 enum OptionIndex
@@ -57,6 +57,12 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
+  UDP autoref_net;
+  if (!autoref_net.open("", 0, false)) {
+    puts("Referee port open failed!");
+    exit(1);
+  }
+
   RemoteClient rcon;
   bool rcon_opened = true;
   if (rcon.open("localhost", 10007)) {
@@ -78,7 +84,7 @@ int main(int argc, char *argv[])
     autoref = new Autoref(verbose);
   }
 
-  // Address ref_addr(RefGroup, RefPort);
+  Address autoref_addr(AutorefGroup, AutorefPort);
 
   SSL_WrapperPacket vision_msg;
   SSL_Referee ref_msg;
@@ -105,6 +111,9 @@ int main(int argc, char *argv[])
           if (rcon_opened) {
             rcon.sendRequest(autoref->makeRemote());
           }
+        }
+        if (autoref->isMessageReady()) {
+          autoref_net.send(autoref->getUpdate(), autoref_addr);
         }
       }
       if (vision_msg.has_geometry()) {

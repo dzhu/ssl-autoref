@@ -1,4 +1,4 @@
-import "referee.proto";
+import "ssl_referee.proto";
 
 message RefereeCall
 {

@@ -1,4 +1,4 @@
-import "referee.proto";
+import "ssl_referee.proto";
 
 // The TCP half-connection from controller to referee box carries a sequence of
 // these messages, sent on demand, each preceded by its length in bytes as a

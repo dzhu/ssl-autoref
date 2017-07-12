@@ -72,7 +72,6 @@ bool UDP::open(const char *server_host, int port, bool blocking)
   socklen_t len = 0;
   int yes = 1;
   getsockopt(fd, IPPROTO_IP, IP_MULTICAST_LOOP, reinterpret_cast<char *>(&yes), &len);
-  printf("loop %d\n", yes);
 
   // allow packets to be received on this host
   if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_LOOP, reinterpret_cast<const char *>(&yes), sizeof(yes)) != 0) {
@@ -86,7 +85,15 @@ bool UDP::open(const char *server_host, int port, bool blocking)
     sockname.sin_family = AF_INET;
     sockname.sin_addr.s_addr = htonl(INADDR_ANY);
     sockname.sin_port = htons(port);
-    bind(fd, reinterpret_cast<struct sockaddr *>(&sockname), sizeof(sockname));
+    if (bind(fd, reinterpret_cast<struct sockaddr *>(&sockname), sizeof(sockname)) != 0) {
+      fprintf(stderr, "ERROR ON BINDING ON UDP SOCKET: %s\n", strerror(errno));
+      fflush(stderr);
+      return false;
+    }
+  }
+
+  if (strlen(server_host) == 0) {
+    return true;
   }
 
   // add UDP multicast groups

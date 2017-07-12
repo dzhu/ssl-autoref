@@ -205,6 +205,10 @@ void BallSpeedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     vars.reset_loc = BoundToField(w.ball.loc, 100, true);
     vars.state = REF_WAIT_STOP;
     setDescription("Ball kicked too fast by %s team", TeamName(vars.toucher.team));
+
+    autoref_msg_valid = true;
+    setReplayTimes(vars.touch_time, w.time);
+    setFoulMessage(ssl::SSL_Autoref::RuleInfringement::BALL_SPEED, vars.toucher);
   }
 }
 
@@ -253,6 +257,10 @@ void BallStuckEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       vars.reset = true;
       vars.reset_loc = legalPosition(last_ball_loc);
       setDescription("Ball got stuck during play");
+
+      autoref_msg_valid = true;
+      setReplayTimes(w.time - 3, w.time);
+      autoref_msg.set_lack_of_progress(true);
     }
   }
 }
@@ -322,8 +330,11 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     if (past_goal_line && crossed_midline && !own_half) {
       vars.next_cmd = teamCommand(INDIRECT_FREE, vars.kicker.team);
       vars.reset_loc = vars.touch_loc;
-
       setDescription("Icing (by %s %X)", TeamName(vars.toucher.team), vars.toucher.id);
+
+      autoref_msg_valid = true;
+      setReplayTimes(vars.touch_time, w.time);
+      setFoulMessage(ssl::SSL_Autoref::RuleInfringement::CARPETING, vars.toucher);
     }
     // if not icing, then throw-in, corner kick, or goal kick
     else {
@@ -345,6 +356,15 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
         setDescription("Throw-in (touched by %s %X)", TeamName(vars.toucher.team), vars.toucher.id);
       }
       vars.reset_loc = pos;
+
+      autoref_msg_valid = true;
+      setReplayTimes(vars.touch_time, w.time);
+      auto ball_out = autoref_msg.mutable_ball_out_of_field();
+      ball_out->set_last_touch(vars.toucher.team == TeamBlue ? ssl::SSL_Autoref_Team_BLUE
+                                                             : ssl::SSL_Autoref_Team_YELLOW);
+      auto out_pos = ball_out->mutable_position();
+      out_pos->set_x(vars.reset_loc.x);
+      out_pos->set_y(vars.reset_loc.y);
     }
   }
 
@@ -364,6 +384,7 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       vars.toucher.team = res.team;
       vars.toucher.id = res.robot_id;
       vars.touch_loc = w.ball.loc;  // TODO compute and use past touch location in detectors
+      vars.touch_time = w.time;
       setDescription("Ball touched by %s team", TeamName(vars.toucher.team));
       break;
     }
@@ -524,6 +545,10 @@ void KickTakenEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       vars.next_cmd = teamCommand(INDIRECT_FREE, vars.kicker.team);
 
       setDescription("Too close to defense area at kick (%s %X)", TeamName(offender.team), offender.id);
+
+      autoref_msg_valid = true;
+      setReplayTimes(w.time - 2, w.time);
+      setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DEFENSE_AREA_DISTANCE, offender);
     }
     else {
       vars.state = REF_RUN;
@@ -622,6 +647,11 @@ void GoalScoredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     vars.reset = true;
     vars.reset_loc.set(0, 0);
     setDescription("Goal scored by %s team", TeamName(scoring_team));
+
+    autoref_msg_valid = true;
+    auto goal = autoref_msg.mutable_goal();
+    goal->set_scoring_team(scoring_team == TeamBlue ? ssl::SSL_Autoref::BLUE : ssl::SSL_Autoref::YELLOW);
+    setReplayTimes(vars.touch_time, w.time);
   }
 }
 

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <string>
 
-#include "referee.pb.h"
+#include "ssl_referee.pb.h"
 
 #include "constants.h"
 #include "gvector.h"

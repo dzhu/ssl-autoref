@@ -8,7 +8,7 @@
 
 #include "messages_robocup_ssl_wrapper.pb.h"
 #include "rcon.pb.h"
-#include "referee.pb.h"
+#include "ssl_referee.pb.h"
 
 #include "base_ref.h"
 

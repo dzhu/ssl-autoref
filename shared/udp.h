@@ -24,6 +24,9 @@ static const int VisionPort = 10005;
 static const char *RefGroup = "224.5.23.1";
 static const int RefPort = 10003;
 
+static const char *AutorefGroup = "224.5.23.3";
+static const int AutorefPort = 10008;
+
 class Address
 {
   sockaddr addr;
