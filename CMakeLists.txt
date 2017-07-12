@@ -20,6 +20,7 @@ set (PROTO_FILES
   messages_robocup_ssl_detection
   messages_robocup_ssl_geometry
   messages_robocup_ssl_wrapper
+  ssl_autoref
   referee
   referee_call
   rcon
@@ -52,11 +53,6 @@ add_library (shared_protobuf ${CC_PROTO})
 add_dependencies (shared_protobuf GenerateProto)
 target_link_libraries (shared_protobuf protobuf)
 
-#### pull in wx
-set (wxWidgets_CONFIGURATION mswu)
-find_package (wxWidgets COMPONENTS core base REQUIRED)
-include (${wxWidgets_USE_FILE})
-
 #### link main executable
 add_executable (autoref
   autoref.cc
@@ -71,27 +67,3 @@ add_executable (autoref
   touches.cc
   )
 target_link_libraries (autoref shared_protobuf)
-
-add_executable (gui_autoref
-  autoref.cc
-  gui_autoref_main.cc
-  base_ref.cc
-  eval_ref.cc
-  events.cc
-  rconclient.cc
-  shared/tracker.cc
-  shared/udp.cc
-  shared/util.cc
-  touches.cc
-
-  gui/control_frame.cc
-  gui/event_types.cc
-  gui/history_item.cc
-  gui/history_panel.cc
-  gui/info_panel.cc
-  gui/field_panel.cc
-  gui/gui_utils.cc
-  )
-
-target_link_libraries (gui_autoref shared_protobuf)
-target_link_libraries(gui_autoref ${wxWidgets_LIBRARIES})
