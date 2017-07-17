@@ -63,10 +63,20 @@ bool UDP::open(const char *server_host, int port, bool blocking)
   }
   fcntl(fd, F_SETFL, flags | (blocking ? 0 : O_NONBLOCK));
 
-  int reuse = 1;
-  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char *>(&reuse), sizeof(reuse)) != 0) {
-    fprintf(stderr, "ERROR WHEN SETTING SO_REUSEADDR ON UDP SOCKET\n");
-    fflush(stderr);
+  {
+    int reuse = 1;
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char *>(&reuse), sizeof(reuse)) != 0) {
+      fprintf(stderr, "ERROR WHEN SETTING SO_REUSEADDR ON UDP SOCKET\n");
+      fflush(stderr);
+    }
+  }
+
+  {
+    int reuse = 1;
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, reinterpret_cast<const char *>(&reuse), sizeof(reuse)) != 0) {
+      fprintf(stderr, "ERROR WHEN SETTING SO_REUSEPORT ON UDP SOCKET\n");
+      fflush(stderr);
+    }
   }
 
   socklen_t len = 0;
