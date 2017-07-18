@@ -96,9 +96,9 @@ struct AutorefVariables
         cmd(SSL_Referee::HALT),
         next_cmd(SSL_Referee::HALT),
         reset(false),
-        reset_loc(0, 0),
         stage_end(0),
         kick_deadline(0),
+        touch_time(0),
         blue_side(0),
         games_played(0)
   {
@@ -137,6 +137,12 @@ protected:
   void setReplayTimes(double t0, double t1)
   {
     auto replay = autoref_msg.mutable_replay();
+
+    if (t0 < t1 - 5) {
+      printf("Replay from %f to %f too long...", t0, t1);
+      t0 = t1 - 5;
+    }
+
     replay->set_start_timestamp(1e6 * t0);
     replay->set_end_timestamp(1e6 * t1);
   }
