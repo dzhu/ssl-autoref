@@ -410,6 +410,10 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
           vars.next_cmd = teamCommand(PREPARE_PENALTY, res.team);
 
           setDescription("Multiple defenders (entire) (by %s %X)", TeamName(vars.toucher.team), vars.toucher.id);
+
+          autoref_msg_valid = true;
+          setReplayTimes(vars.touch_time - 1, w.time);
+          setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DEFENDER_DEFENSE_AREA_FULL, vars.toucher);
         }
         else if (own_dist < MaxRobotRadius) {
           vars.state = REF_WAIT_STOP;
@@ -418,6 +422,10 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
           setDescription("Multiple defenders (partial) (by %s %X)", TeamName(vars.toucher.team), vars.toucher.id);
           // TODO send card
+
+          autoref_msg_valid = true;
+          setReplayTimes(vars.touch_time - 1, w.time);
+          setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DEFENDER_DEFENSE_AREA_PARTIAL, vars.toucher);
         }
       }
       // check opponent defense area
@@ -428,6 +436,10 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
         vars.next_cmd = teamCommand(INDIRECT_FREE, vars.kicker.team);
 
         setDescription("Attacker in defense area");
+
+        autoref_msg_valid = true;
+        setReplayTimes(vars.touch_time - 1, w.time);
+        setFoulMessage(ssl::SSL_Autoref::RuleInfringement::ATTACKER_DEFENSE_AREA, vars.toucher);
       }
     }
   }
@@ -583,6 +595,10 @@ void KickExpiredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     vars.state = REF_WAIT_STOP;
     vars.next_cmd = SSL_Referee::FORCE_START;
     setDescription("Team took too long to take a kick");
+
+    autoref_msg_valid = true;
+    autoref_msg.set_lack_of_progress(true);
+    setReplayTimes(w.time - 3, w.time);
   }
 }
 
@@ -716,6 +732,11 @@ void LongDribbleEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       if (dist(r.loc, d.start_loc) > 1000) {
         fired = true;
         setDescription("Ball dribbled too far by robot %s-%X", TeamName(r.team), r.robot_id);
+
+        autoref_msg_valid = true;
+        // TODO compute start time
+        setReplayTimes(w.time - 3, w.time);
+        setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DRIBBLING, RobotID(r.team, r.robot_id));
       }
     }
     else {
@@ -793,10 +814,13 @@ void TooManyRobotsEvent::_process(const World &w, bool ball_z_valid, float ball_
   //        msg.yellow().yellow_card_times_size());
   // printf("b %d/%d  y %d/%d\n", n_blue, max_blue, n_yellow, max_yellow);
 
+  Team offending_team = TeamNone;
+
   if (n_blue > max_blue) {
     blue_frames++;
 
     if (blue_frames > 300) {
+      offending_team = TeamBlue;
       blue_frames = 0;
       fired = true;
       setDescription("Blue team has %d robots (max %d)", n_blue, max_blue);
@@ -805,6 +829,7 @@ void TooManyRobotsEvent::_process(const World &w, bool ball_z_valid, float ball_
   else if (n_yellow > max_yellow) {
     yellow_frames++;
     if (yellow_frames > 300) {
+      offending_team = TeamYellow;
       yellow_frames = 0;
       fired = true;
       setDescription("Yellow team has %d robots (max %d)", n_yellow, max_yellow);
@@ -814,6 +839,10 @@ void TooManyRobotsEvent::_process(const World &w, bool ball_z_valid, float ball_
   if (fired) {
     vars.cmd = SSL_Referee::STOP;
     vars.next_cmd = SSL_Referee::FORCE_START;
+
+    autoref_msg_valid = true;
+    setReplayTimes(w.time - 3, w.time);
+    setFoulMessage(ssl::SSL_Autoref::RuleInfringement::NUMBER_OF_PLAYERS, offending_team);
   }
 }
 
@@ -832,12 +861,47 @@ void RobotSpeedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   }
 
   for (int team = 0; team < NumTeams; team++) {
-    if (violation_frames[team] > 10 * FrameRate) {
+    if (violation_frames[team] > 2 * FrameRate) {
       fired = true;
       violation_frames[team] = 0;
 
       setDescription("%s team moved too fast during game off", TeamName(static_cast<Team>(team), true));
       break;
+
+      autoref_msg_valid = true;
+      setReplayTimes(w.time - 3, w.time);
+      setFoulMessage(ssl::SSL_Autoref::RuleInfringement::STOP_SPEED, static_cast<Team>(team));
+    }
+  }
+}
+
+const char StopDistanceEvent::ID;
+
+void StopDistanceEvent::_process(const World &w, bool ball_z_valid, float ball_z)
+{
+  if (vars.state != REF_WAIT_STOP) {
+    return;
+  }
+
+  float dist = GameOffRobotDistanceLimit + MaxRobotRadius;
+
+  for (const auto &robot : w.robots) {
+    if ((robot.loc - w.ball.loc).length() < GameOffRobotDistanceLimit) {
+      violation_frames[static_cast<int>(robot.team)]++;
+    }
+  }
+
+  for (int team = 0; team < NumTeams; team++) {
+    if (violation_frames[team] > 2 * FrameRate) {
+      fired = true;
+      violation_frames[team] = 0;
+
+      setDescription("%s team was too close to the ball during game off", TeamName(static_cast<Team>(team), true));
+      break;
+
+      autoref_msg_valid = true;
+      setReplayTimes(w.time - 3, w.time);
+      setFoulMessage(ssl::SSL_Autoref::RuleInfringement::STOP_BALL_DISTANCE, static_cast<Team>(team));
     }
   }
 }

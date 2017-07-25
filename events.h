@@ -538,3 +538,23 @@ public:
     violation_frames[0] = violation_frames[1] = 0;
   }
 };
+
+class StopDistanceEvent : public AutorefEvent
+{
+  int violation_frames[NumTeams];
+
+  constexpr static float GameOffRobotDistanceLimit = 450;
+
+public:
+  static const char ID = 0;
+  void _process(const World &w, bool ball_z_valid, float ball_z);
+  const char *name() const
+  {
+    return "a robot is too close to the ball during game off";
+  }
+
+  StopDistanceEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
+  {
+    violation_frames[0] = violation_frames[1] = 0;
+  }
+};
