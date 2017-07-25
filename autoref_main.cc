@@ -20,14 +20,16 @@ enum OptionIndex
   UNKNOWN,
   HELP,
   VERBOSE,
-  EVAL,
+  FULL,
+  REMOTE,
 };
 
 const option::Descriptor options[] = {
-  {UNKNOWN, 0, "", "", option::Arg::None, "An automatic referee for the SSL."},    //
-  {HELP, 0, "h", "help", option::Arg::None, "-h, --help: print help"},             //
-  {VERBOSE, 0, "v", "verbose", option::Arg::None, "-v: verbose"},                  //
-  {EVAL, 0, "", "eval", option::Arg::None, "--eval: run using evaluation logic"},  //
+  {UNKNOWN, 0, "", "", option::Arg::None, "An automatic referee for the SSL."},             //
+  {HELP, 0, "h", "help", option::Arg::None, "-h, --help: print help"},                      //
+  {VERBOSE, 0, "v", "verbose", option::Arg::None, "-v: verbose"},                           //
+  {FULL, 0, "f", "full", option::Arg::None, "--full: run using full game logic"},           //
+  {REMOTE, 0, "r", "remote", option::Arg::None, "--remote: send refbox control messages"},  //
   {0, 0, nullptr, nullptr, nullptr, nullptr},
 };
 
@@ -63,25 +65,28 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
+  bool use_rcon = args[REMOTE] != nullptr;
   RemoteClient rcon;
-  bool rcon_opened = true;
-  if (rcon.open("localhost", 10007)) {
-    puts("Remote client opened!");
-  }
-  else {
-    rcon_opened = false;
-    puts("Remote client port open failed!");
+  bool rcon_opened = false;
+  if (use_rcon) {
+    if (rcon.open("localhost", 10007)) {
+      puts("Remote client opened!");
+      rcon_opened = true;
+    }
+    else {
+      puts("Remote client port open failed!");
+    }
   }
 
   bool verbose = (args[VERBOSE] != nullptr);
   BaseAutoref *autoref;
-  if (args[EVAL]) {
-    puts("Starting evaluation autoref.");
-    autoref = new EvaluationAutoref(verbose);
-  }
-  else {
+  if (args[FULL]) {
     puts("Starting full autoref.");
     autoref = new Autoref(verbose);
+  }
+  else {
+    puts("Starting evaluation autoref.");
+    autoref = new EvaluationAutoref(verbose);
   }
 
   Address autoref_addr(AutorefGroup, AutorefPort);
