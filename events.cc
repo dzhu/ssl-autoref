@@ -344,10 +344,16 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
         vars.next_cmd = teamCommand(DIRECT_FREE, vars.kicker.team);
 
         if (own_half) {
-          setDescription("Corner kick (touched by %s %X)", TeamName(vars.toucher.team), vars.toucher.id);
+          setDescription("Corner kick %s -- (touched by %s %X)",
+                         TeamName(FlipTeam(vars.toucher.team)),
+                         TeamName(vars.toucher.team),
+                         vars.toucher.id);
         }
         else {
-          setDescription("Goal kick (touched by %s %X)", TeamName(vars.toucher.team), vars.toucher.id);
+          setDescription("Goal kick %s -- (touched by %s %X)",
+                         TeamName(FlipTeam(vars.toucher.team)),
+                         TeamName(vars.toucher.team),
+                         vars.toucher.id);
         }
       }
       else {
@@ -385,7 +391,7 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       vars.toucher.id = res.robot_id;
       vars.touch_loc = w.ball.loc;  // TODO compute and use past touch location in detectors
       vars.touch_time = w.time;
-      setDescription("Ball touched by %s team", TeamName(vars.toucher.team));
+      // setDescription("Ball touched by %s team", TeamName(vars.toucher.team));
       break;
     }
   }

@@ -124,7 +124,13 @@ bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z
       //   printf("\n%s \x1b[32;1mEvent fired: %s\x1b[m\n", time_buf, ev->name());
       // }
       if (new_vars.reset) {
-        printf("\n%s \x1b[33;1mPlease move the ball to <%.0f,%.0f>!\x1b[m\n", time_buf, V2COMP(new_vars.reset_loc));
+        int color = 33;
+        bool is_bold = false;
+        printf("\n%s \x1b[%d;%dmPlease move the ball to <%.0f,%.0f>!\x1b[m\n",
+               time_buf,
+               is_bold,
+               color,
+               V2COMP(new_vars.reset_loc));
       }
 
       vars = new_vars;
