@@ -28,6 +28,9 @@ void BaseAutoref::updateVision(const SSL_DetectionFrame &d)
   if (tracker.getWorld(w)) {
     doEvents(w);
   }
+  else {
+    message_ready = false;
+  }
 }
 
 void BaseAutoref::updateReferee(const SSL_Referee &r)
