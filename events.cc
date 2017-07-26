@@ -892,13 +892,13 @@ void StopDistanceEvent::_process(const World &w, bool ball_z_valid, float ball_z
   float dist = GameOffRobotDistanceLimit + MaxRobotRadius;
 
   for (const auto &robot : w.robots) {
-    if ((robot.loc - w.ball.loc).length() < GameOffRobotDistanceLimit) {
+    if ((robot.loc - w.ball.loc).length() < dist) {
       violation_frames[static_cast<int>(robot.team)]++;
     }
   }
 
   for (int team = 0; team < NumTeams; team++) {
-    if (violation_frames[team] > 2 * FrameRate) {
+    if (violation_frames[team] > 10 * FrameRate) {
       fired = true;
       violation_frames[team] = 0;
 
