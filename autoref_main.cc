@@ -97,13 +97,22 @@ int main(int argc, char *argv[])
   fd_set read_fds;
   int n_fds = std::max(vision_net.getFd(), ref_net.getFd()) + 1;
 
+  bool got_vision = false, got_ref = false;
+
+  puts("\nWaiting for network packets...");
+
   while (true) {
     FD_ZERO(&read_fds);
     FD_SET(vision_net.getFd(), &read_fds);
     FD_SET(ref_net.getFd(), &read_fds);
     select(n_fds, &read_fds, nullptr, nullptr, nullptr);
 
-    if (vision_net.recv(vision_msg)) {
+    if (FD_ISSET(vision_net.getFd(), &read_fds) && vision_net.recv(vision_msg)) {
+      if (!got_vision) {
+        got_vision = true;
+        puts("Got vision packet!");
+      }
+
       if (vision_msg.has_detection()) {
         autoref->updateVision(vision_msg.detection());
 
@@ -125,7 +134,11 @@ int main(int argc, char *argv[])
         autoref->updateGeometry(vision_msg.geometry());
       }
     }
-    if (ref_net.recv(ref_msg)) {
+    if (FD_ISSET(ref_net.getFd(), &read_fds) && ref_net.recv(ref_msg)) {
+      if (!got_ref) {
+        got_ref = true;
+        puts("Got ref packet!");
+      }
       autoref->updateReferee(ref_msg);
     }
   }
