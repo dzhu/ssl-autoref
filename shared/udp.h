@@ -18,14 +18,18 @@ using namespace google::protobuf;
 
 static const int MaxDataGramSize = 65536;
 
+static const int PORT_OFFSET =
+#include "PORT_OFFSET"
+  ;
+
 static const char *VisionGroup = "224.5.23.2";
-static const int VisionPort = 10005;
+static const int VisionPort = 10005 + PORT_OFFSET;
 
 static const char *RefGroup = "224.5.23.1";
-static const int RefPort = 10003;
+static const int RefPort = 10003 + PORT_OFFSET;
 
 static const char *AutorefGroup = "224.5.23.3";
-static const int AutorefPort = 10008;
+static const int AutorefPort = 10008 + PORT_OFFSET;
 
 class Address
 {
