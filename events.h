@@ -209,7 +209,9 @@ public:
 
   bool getMessage(ssl::SSL_Autoref &msg) const
   {
-    msg = autoref_msg;
+    if (autoref_msg_valid) {
+      msg = autoref_msg;
+    }
     return autoref_msg_valid;
   }
 

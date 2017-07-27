@@ -1,2 +1,6 @@
 #!/bin/bash
-./build.sh && bin/autoref
+./build.sh
+while true; do
+    bin/autoref
+    sleep .2
+done

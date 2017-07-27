@@ -127,6 +127,16 @@ int main(int argc, char *argv[])
           }
         }
         if (autoref->isMessageReady()) {
+          {
+            const auto &a = autoref->getUpdate();
+            printf("has timestamp: %d\n", a.has_game_timestamp());
+            if (a.has_game_timestamp()) {
+              printf("timestamp has: %d %d\n",
+                     a.game_timestamp().has_game_stage(),
+                     a.game_timestamp().has_stage_time_left());
+            }
+          }
+
           autoref_net.send(autoref->getUpdate(), autoref_addr);
         }
       }
