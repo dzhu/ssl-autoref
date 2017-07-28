@@ -192,17 +192,17 @@ vector2f OutOfBoundsLoc(const vector2f &objectLoc, const vector2f &objectDir)
                          : vector2f(objectLoc.x + ytime * dir.x, -FieldWidthH);
 }
 
-vector2f ClosestDefenseAreaP(const vector2f &loc, bool ours, double dist)
+vector2f ClosestDefenseAreaP(const vector2f &loc, bool positive_x, double dist)
 {
   // Check if the location is outside the goal line.
-  if (ours && loc.x < -FieldLengthH) {
+  if (!positive_x && loc.x < -FieldLengthH) {
     return vector2f(-FieldLengthH - dist, loc.y);
   }
-  if (!ours && loc.x > FieldLengthH) {
+  if (!positive_x && loc.x > FieldLengthH) {
     return vector2f(FieldLengthH + dist, loc.y);
   }
 
-  const float goal_x = ours ? -FieldLengthH : FieldLengthH;
+  const float goal_x = positive_x ? FieldLengthH : -FieldLengthH;
   const float dy = fabs(loc.y) - static_cast<float>(DefenseStretchH);
   if (dy > 0) {
     // On the circular part

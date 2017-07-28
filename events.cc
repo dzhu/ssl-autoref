@@ -37,6 +37,23 @@ const AutorefVariables &AutorefEvent::refVars() const
   return ref->vars;
 }
 
+vector2f legalPosition(vector2f loc)
+{
+  if (fabs(loc.x) > FieldLengthH) {
+    loc.x = sign(loc.x) * FieldLengthH;
+  }
+
+  if (DistToDefenseArea(loc, true) < 700) {
+    puts("t");
+    return ClosestDefenseAreaP(loc, true, 700);
+  }
+  if (DistToDefenseArea(loc, false) < 700) {
+    puts("f");
+    return ClosestDefenseAreaP(loc, false, 700);
+  }
+  return loc;
+}
+
 const char InitEvent::ID;
 
 void InitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
@@ -209,25 +226,11 @@ void BallSpeedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     autoref_msg_valid = true;
     setReplayTimes(vars.touch_time, w.time);
     setFoulMessage(ssl::SSL_Autoref::RuleInfringement::BALL_SPEED, vars.toucher);
+    setDesignatedPoint(legalPosition(vars.touch_loc));
   }
 }
 
 const char BallStuckEvent::ID;
-
-vector2f BallStuckEvent::legalPosition(vector2f loc)
-{
-  if (fabs(loc.x) > FieldLengthH) {
-    loc.x = sign(loc.x) * FieldLengthH;
-  }
-
-  if (DistToDefenseArea(loc, true) < 700) {
-    return ClosestDefenseAreaP(loc, true, 700);
-  }
-  if (DistToDefenseArea(loc, false) < 700) {
-    return ClosestDefenseAreaP(loc, false, 700);
-  }
-  return loc;
-}
 
 void BallStuckEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 {
@@ -335,6 +338,7 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       autoref_msg_valid = true;
       setReplayTimes(vars.touch_time, w.time);
       setFoulMessage(ssl::SSL_Autoref::RuleInfringement::CARPETING, vars.toucher);
+      setDesignatedPoint(legalPosition(vars.touch_loc));
     }
     // if not icing, then throw-in, corner kick, or goal kick
     else {
@@ -420,6 +424,7 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
           autoref_msg_valid = true;
           setReplayTimes(vars.touch_time - 1, w.time);
           setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DEFENDER_DEFENSE_AREA_FULL, vars.toucher);
+          setDesignatedPoint(legalPosition(vars.touch_loc));
         }
         else if (own_dist < MaxRobotRadius) {
           vars.state = REF_WAIT_STOP;
@@ -432,6 +437,7 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
           autoref_msg_valid = true;
           setReplayTimes(vars.touch_time - 1, w.time);
           setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DEFENDER_DEFENSE_AREA_PARTIAL, vars.toucher);
+          setDesignatedPoint(legalPosition(vars.touch_loc));
         }
       }
       // check opponent defense area
@@ -446,6 +452,7 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
         autoref_msg_valid = true;
         setReplayTimes(vars.touch_time - 1, w.time);
         setFoulMessage(ssl::SSL_Autoref::RuleInfringement::ATTACKER_DEFENSE_AREA, vars.toucher);
+        setDesignatedPoint(legalPosition(vars.touch_loc));
       }
     }
   }
@@ -556,6 +563,8 @@ void KickTakenEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     vars.blue_side = GuessBlueSide(w);
 
     RobotID offender = checkDefenseAreaDistanceInfraction(w);
+    printf("kicker: %d %d\n", vars.kicker.team, vars.kicker.id);
+    printf("infraction: %d %d\n", offender.team, offender.id);
     if (offender.isValid()) {
       vars.state = REF_WAIT_STOP;
       vars.cmd = SSL_Referee::STOP;
@@ -567,6 +576,12 @@ void KickTakenEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       autoref_msg_valid = true;
       setReplayTimes(w.time - 2, w.time);
       setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DEFENSE_AREA_DISTANCE, offender);
+      for (const auto &r : w.robots) {
+        if (RobotID(r.team, r.robot_id) == offender) {
+          setDesignatedPoint(legalPosition(r.loc));
+          break;
+        }
+      }
     }
     else {
       vars.state = REF_RUN;
@@ -743,6 +758,7 @@ void LongDribbleEvent::_process(const World &w, bool ball_z_valid, float ball_z)
         // TODO compute start time
         setReplayTimes(w.time - 3, w.time);
         setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DRIBBLING, RobotID(r.team, r.robot_id));
+        setDesignatedPoint(legalPosition(d.start_loc));
       }
     }
     else {
@@ -867,12 +883,11 @@ void RobotSpeedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   }
 
   for (int team = 0; team < NumTeams; team++) {
-    if (violation_frames[team] > 2 * FrameRate) {
+    if (violation_frames[team] > 4 * FrameRate) {
       fired = true;
       violation_frames[team] = 0;
 
       setDescription("%s team moved too fast during game off", TeamName(static_cast<Team>(team), true));
-      break;
 
       autoref_msg_valid = true;
       setReplayTimes(w.time - 3, w.time);
@@ -903,7 +918,6 @@ void StopDistanceEvent::_process(const World &w, bool ball_z_valid, float ball_z
       violation_frames[team] = 0;
 
       setDescription("%s team was too close to the ball during game off", TeamName(static_cast<Team>(team), true));
-      break;
 
       autoref_msg_valid = true;
       setReplayTimes(w.time - 3, w.time);

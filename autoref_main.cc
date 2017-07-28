@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 
   UDP autoref_net;
   if (!autoref_net.open("", 0, false)) {
-    puts("Referee port open failed!");
+    puts("Autoref port open failed!");
     exit(1);
   }
 

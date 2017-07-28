@@ -55,6 +55,11 @@ struct RobotID
   {
     return (team == TeamBlue || team == TeamYellow) && (id >= 0 && id < MaxRobotIds);
   }
+
+  bool operator==(RobotID other)
+  {
+    return team == other.team && id == other.id;
+  }
 };
 
 struct AutorefVariables
@@ -164,6 +169,12 @@ protected:
   {
     setFoulMessage(type, offending_robot.team);
     addFoulOffender(offending_robot.id);
+  }
+
+  void setDesignatedPoint(vector2f designated_point)
+  {
+    autoref_msg.mutable_foul()->mutable_designated_point()->set_x(designated_point.x);
+    autoref_msg.mutable_foul()->mutable_designated_point()->set_y(designated_point.y);
   }
 
 public:
@@ -301,8 +312,6 @@ class BallStuckEvent : public AutorefEvent
   int wait_frames;
 
   vector2f last_ball_loc;
-
-  vector2f legalPosition(vector2f loc);
 
 public:
   static const char ID = 0;

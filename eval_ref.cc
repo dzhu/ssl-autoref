@@ -63,6 +63,7 @@ bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z
       if (ev->getMessage(message)) {
         message_ready = true;
 
+        message.set_blue_side(vars.blue_side);
         message.set_command_timestamp(GetTimeMicros());
 
         auto timestamp = message.mutable_game_timestamp();

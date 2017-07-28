@@ -38,22 +38,18 @@ message SSL_Autoref {
         required Team offending_team = 2;
         repeated uint32 offending_robots = 3;
         optional string reason = 4;
-    }
-
-    message Point {
-        required float x = 1;
-        required float y = 2;
+        optional SSL_Referee.Point designated_point = 5;
     }
 
     message Goal {
         required Team scoring_team = 1;
-        optional Point position = 2;
+        optional SSL_Referee.Point position = 2;
         optional uint32 scoring_robot = 3;
     }
 
     message BallOutOfField {
         required Team last_touch = 1;
-        required Point position = 2;
+        required SSL_Referee.Point position = 2;
     }
 
     oneof event {
@@ -69,4 +65,8 @@ message SSL_Autoref {
     }
 
     optional Replay replay = 7;
+
+    // Sign of the x-coordinate of the blue goal (used to distinguish goal kicks
+    // and corner kicks).
+    optional int32 blue_side = 8;
 }
