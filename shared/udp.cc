@@ -44,6 +44,12 @@ in_addr_t Address::getInAddr() const
   return s->sin_addr.s_addr;
 }
 
+sockaddr_in Address::getSockAddr() const
+{
+  const sockaddr_in s = *reinterpret_cast<const sockaddr_in *>(&addr);
+  return s;
+}
+
 //====================================================================//
 //  Net::UDP: Simple raw UDP messaging
 //====================================================================//
@@ -169,14 +175,19 @@ int UDP::recv(Address &src)
   return len;
 }
 
-bool UDP::recv(Message &packet)
+bool UDP::recv(Message &packet, Address &src)
 {
-  Address addr;
-  int n = recv(addr);
+  int n = recv(src);
   if (n <= 0) {
     return false;
   }
   return packet.ParsePartialFromArray(buf, n);
+}
+
+bool UDP::recv(Message &packet)
+{
+  Address addr;
+  return recv(packet, addr);
 }
 
 bool UDP::havePendingData() const

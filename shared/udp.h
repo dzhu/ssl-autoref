@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include <stdio.h>
 #include <string.h>
 
@@ -62,6 +64,10 @@ public:
   {
     return addr_len == a.addr_len && memcmp(&addr, &a.addr, addr_len) == 0;
   }
+  bool operator!=(const Address &a) const
+  {
+    return !(*this == a);
+  }
   void copy(const Address &src)
   {
     memcpy(&addr, &src.addr, src.addr_len);
@@ -78,6 +84,16 @@ public:
   }
 
   in_addr_t getInAddr() const;
+
+  sockaddr_in getSockAddr() const;
+
+  std::string toString() const
+  {
+    sockaddr_in sa = getSockAddr();
+    char buf[128];
+    snprintf(buf, sizeof(buf), "%s:%d", inet_ntoa(sa.sin_addr), sa.sin_port);
+    return std::string(buf);
+  }
 
   friend class UDP;
 };
@@ -117,6 +133,7 @@ public:
 
   int recv(Address &src);
   bool recv(Message &packet);
+  bool recv(Message &packet, Address &src);
 
   bool wait(int timeout_ms = -1) const;
   bool havePendingData() const;
