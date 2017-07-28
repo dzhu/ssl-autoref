@@ -314,8 +314,7 @@ int8_t GuessBlueSide(const World &w)
 
 Team RandomTeam()
 {
-  static std::default_random_engine generator;
-  static std::uniform_int_distribution<unsigned int> binary_dist;
-
+  static std::default_random_engine generator(std::random_device{}());
+  static std::uniform_int_distribution<unsigned int> binary_dist(0, 1);
   return binary_dist(generator) ? TeamYellow : TeamBlue;
 }
