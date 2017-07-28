@@ -387,39 +387,44 @@ const char BallTouchedEvent::ID;
 
 void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 {
-  CollideResult res;
-  for (auto &proc : procs) {
-    if (proc->proc(w, res)) {
-      fired = true;
-      vars.toucher.team = res.team;
-      vars.toucher.id = res.robot_id;
-      vars.touch_loc = w.ball.loc;  // TODO compute and use past touch location in detectors
-      vars.touch_time = w.time;
-      // setDescription("Ball touched by %s team", TeamName(vars.toucher.team));
-      break;
+  {
+    CollideResult res;
+    for (auto &proc : procs) {
+      if (proc->proc(w, res)) {
+        fired = true;
+        vars.toucher.team = res.team;
+        vars.toucher.id = res.robot_id;
+        vars.touch_loc = w.ball.loc;  // TODO compute and use past touch location in detectors
+        vars.touch_time = w.time;
+        // setDescription("Ball touched by %s team", TeamName(vars.toucher.team));
+        break;
+      }
     }
   }
 
   if (fired && vars.state == REF_RUN) {
     // check if the robot touched the ball while in one of the defense areas
     for (const auto &r : w.robots) {
-      if (r.team != res.team || r.robot_id != res.robot_id) {
+      if (r.team != vars.toucher.team || r.robot_id != vars.toucher.id) {
         continue;
       }
 
       bool own_side_positive_x = (vars.blue_side > 0) == (r.team == TeamBlue);
       double own_dist = DistToDefenseArea(r.loc, own_side_positive_x);
       auto &refbox = ref->getRefboxMessage();
-      uint32_t goalie_id = (res.team == TeamBlue ? refbox.blue() : refbox.yellow()).goalie();
+      uint32_t goalie_id = (vars.toucher.team == TeamBlue ? refbox.blue() : refbox.yellow()).goalie();
 
       // check own defense area
-      if (res.robot_id != goalie_id) {
+      if (vars.toucher.id != goalie_id) {
         if (own_dist < -MaxRobotRadius) {
           vars.state = REF_WAIT_STOP;
           vars.cmd = SSL_Referee::STOP;
-          vars.next_cmd = teamCommand(PREPARE_PENALTY, res.team);
+          vars.next_cmd = teamCommand(PREPARE_PENALTY, vars.toucher.team);
 
-          setDescription("Multiple defenders (entire) (by %s %X)", TeamName(vars.toucher.team), vars.toucher.id);
+          setDescription("Multiple defenders (entire) (by %s %X at <%.0f,%.0f>)",
+                         TeamName(vars.toucher.team),
+                         vars.toucher.id,
+                         V2COMP(r.loc));
 
           autoref_msg_valid = true;
           setReplayTimes(vars.touch_time - 1, w.time);
@@ -431,7 +436,10 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
           vars.cmd = SSL_Referee::STOP;
           vars.next_cmd = SSL_Referee::FORCE_START;
 
-          setDescription("Multiple defenders (partial) (by %s %X)", TeamName(vars.toucher.team), vars.toucher.id);
+          setDescription("Multiple defenders (partial) (by %s %X at <%.0f,%.0f>)",
+                         TeamName(vars.toucher.team),
+                         vars.toucher.id,
+                         V2COMP(r.loc));
           // TODO send card
 
           autoref_msg_valid = true;
@@ -443,7 +451,7 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       // check opponent defense area
       if (DistToDefenseArea(r.loc, !own_side_positive_x) < MaxRobotRadius) {
         vars.state = REF_WAIT_STOP;
-        vars.kicker.team = FlipTeam(res.team);
+        vars.kicker.team = FlipTeam(vars.toucher.team);
         vars.cmd = SSL_Referee::STOP;
         vars.next_cmd = teamCommand(INDIRECT_FREE, vars.kicker.team);
 
@@ -809,6 +817,19 @@ void StageTimeEndedEvent::_process(const World &w, bool ball_z_valid, float ball
 
 const char TooManyRobotsEvent::ID;
 
+char *id_str(const World &w, Team team)
+{
+  static char id_str[100];
+  id_str[0] = 0;
+  for (const auto &r : w.robots) {
+    if (r.team == team) {
+      sprintf(id_str + strlen(id_str), "%d, ", r.robot_id);
+    }
+  }
+  id_str[strlen(id_str) - 2] = 0;
+  return id_str;
+}
+
 void TooManyRobotsEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 {
   if (vars.state != REF_RUN && vars.state != REF_WAIT_STOP) {
@@ -840,22 +861,23 @@ void TooManyRobotsEvent::_process(const World &w, bool ball_z_valid, float ball_
 
   if (n_blue > max_blue) {
     blue_frames++;
-
-    if (blue_frames > 300) {
-      offending_team = TeamBlue;
-      blue_frames = 0;
-      fired = true;
-      setDescription("Blue team has %d robots (max %d)", n_blue, max_blue);
-    }
   }
-  else if (n_yellow > max_yellow) {
+  if (n_yellow > max_yellow) {
     yellow_frames++;
-    if (yellow_frames > 300) {
-      offending_team = TeamYellow;
-      yellow_frames = 0;
-      fired = true;
-      setDescription("Yellow team has %d robots (max %d)", n_yellow, max_yellow);
-    }
+  }
+
+  if (blue_frames > 300) {
+    offending_team = TeamBlue;
+    blue_frames = 0;
+    fired = true;
+    setDescription("Blue team has %d robots (max %d, ids: %s)", n_blue, max_blue, id_str(w, TeamBlue));
+  }
+
+  else if (yellow_frames > 300) {
+    offending_team = TeamYellow;
+    yellow_frames = 0;
+    fired = true;
+    setDescription("Yellow team has %d robots (max %d, ids: %s)", n_yellow, max_yellow, id_str(w, TeamYellow));
   }
 
   if (fired) {
