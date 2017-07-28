@@ -315,8 +315,14 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   fired = cnt > 1;
 
   if (fired) {
-    if (vars.toucher.team != TeamBlue && vars.toucher.team != TeamYellow) {
+    char id_str[10];
+
+    if (!vars.toucher.isValid()) {
       vars.toucher.team = RandomTeam();
+      sprintf(id_str, "<unknown>");
+    }
+    else {
+      sprintf(id_str, "%s %X", TeamName(vars.toucher.team), vars.toucher.id);
     }
 
     vars.reset = true;
@@ -333,7 +339,7 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     if (past_goal_line && crossed_midline && !own_half) {
       vars.next_cmd = teamCommand(INDIRECT_FREE, vars.kicker.team);
       vars.reset_loc = vars.touch_loc;
-      setDescription("Icing (by %s %X)", TeamName(vars.toucher.team), vars.toucher.id);
+      setDescription("Icing by %s", id_str);
 
       autoref_msg_valid = true;
       setReplayTimes(vars.touch_time, w.time);
@@ -348,22 +354,16 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
         vars.next_cmd = teamCommand(DIRECT_FREE, vars.kicker.team);
 
         if (own_half) {
-          setDescription("Corner kick %s -- (touched by %s %X)",
-                         TeamName(FlipTeam(vars.toucher.team)),
-                         TeamName(vars.toucher.team),
-                         vars.toucher.id);
+          setDescription("Corner kick %s -- touched by %s", TeamName(FlipTeam(vars.toucher.team)), id_str);
         }
         else {
-          setDescription("Goal kick %s -- (touched by %s %X)",
-                         TeamName(FlipTeam(vars.toucher.team)),
-                         TeamName(vars.toucher.team),
-                         vars.toucher.id);
+          setDescription("Goal kick %s -- touched by %s", TeamName(FlipTeam(vars.toucher.team)), id_str);
         }
       }
       else {
         pos.set(out_loc.x, sign(out_loc.y) * (FieldWidthH - 100));
         vars.next_cmd = teamCommand(INDIRECT_FREE, vars.kicker.team);
-        setDescription("Throw-in (touched by %s %X)", TeamName(vars.toucher.team), vars.toucher.id);
+        setDescription("Throw-in %s -- touched by %s", TeamName(FlipTeam(vars.toucher.team)), id_str);
       }
       vars.reset_loc = pos;
 
