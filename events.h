@@ -533,8 +533,10 @@ public:
 class RobotSpeedEvent : public AutorefEvent
 {
   int violation_frames[NumTeams];
+  int frames_in_stop;
 
   constexpr static float GameOffRobotSpeedLimit = 1600;
+  const static int GracePeriodFrames = 120;
 
 public:
   static const char ID = 0;
@@ -544,7 +546,7 @@ public:
     return "a robot moves too fast during game off";
   }
 
-  RobotSpeedEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
+  RobotSpeedEvent(BaseAutoref *_ref) : AutorefEvent(_ref), frames_in_stop(0)
   {
     violation_frames[0] = violation_frames[1] = 0;
   }

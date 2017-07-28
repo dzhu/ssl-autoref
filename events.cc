@@ -895,25 +895,31 @@ const char RobotSpeedEvent::ID;
 void RobotSpeedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 {
   if (vars.state != REF_WAIT_STOP) {
+    frames_in_stop = 0;
     return;
   }
 
-  for (const auto &robot : w.robots) {
-    if (robot.vel.length() > GameOffRobotSpeedLimit) {
-      violation_frames[static_cast<int>(robot.team)]++;
-    }
+  if (frames_in_stop < GracePeriodFrames) {
+    frames_in_stop++;
   }
+  else {
+    for (const auto &robot : w.robots) {
+      if (robot.vel.length() > GameOffRobotSpeedLimit) {
+        violation_frames[static_cast<int>(robot.team)]++;
+      }
+    }
 
-  for (int team = 0; team < NumTeams; team++) {
-    if (violation_frames[team] > 4 * FrameRate) {
-      fired = true;
-      violation_frames[team] = 0;
+    for (int team = 0; team < NumTeams; team++) {
+      if (violation_frames[team] > 4 * FrameRate) {
+        fired = true;
+        violation_frames[team] = 0;
 
-      setDescription("%s team moved too fast during game off", TeamName(static_cast<Team>(team), true));
+        setDescription("%s team moved too fast during game off", TeamName(static_cast<Team>(team), true));
 
-      autoref_msg_valid = true;
-      setReplayTimes(w.time - 3, w.time);
-      setFoulMessage(ssl::SSL_Autoref::RuleInfringement::STOP_SPEED, static_cast<Team>(team));
+        autoref_msg_valid = true;
+        setReplayTimes(w.time - 3, w.time);
+        setFoulMessage(ssl::SSL_Autoref::RuleInfringement::STOP_SPEED, static_cast<Team>(team));
+      }
     }
   }
 }
