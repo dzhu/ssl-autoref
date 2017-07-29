@@ -316,7 +316,6 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
   if (fired) {
     char id_str[10];
-
     if (!vars.toucher.isValid()) {
       vars.toucher.team = RandomTeam();
       sprintf(id_str, "<unknown>");
@@ -373,8 +372,8 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       ball_out->set_last_touch(vars.toucher.team == TeamBlue ? ssl::SSL_Autoref_Team_BLUE
                                                              : ssl::SSL_Autoref_Team_YELLOW);
       auto out_pos = ball_out->mutable_position();
-      out_pos->set_x(vars.reset_loc.x);
-      out_pos->set_y(vars.reset_loc.y);
+      out_pos->set_x(out_loc.x);
+      out_pos->set_y(out_loc.y);
     }
   }
 
@@ -421,10 +420,11 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
           vars.cmd = SSL_Referee::STOP;
           vars.next_cmd = teamCommand(PREPARE_PENALTY, vars.toucher.team);
 
-          setDescription("Multiple defenders (entire) (by %s %X at <%.0f,%.0f>)",
+          setDescription("Multiple defenders (entire) (by %s %X at <%.0f,%.0f>, dist %.0f)",
                          TeamName(vars.toucher.team),
                          vars.toucher.id,
-                         V2COMP(r.loc));
+                         V2COMP(r.loc),
+                         own_dist);
 
           autoref_msg_valid = true;
           setReplayTimes(vars.touch_time - 1, w.time);
@@ -436,10 +436,11 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
           vars.cmd = SSL_Referee::STOP;
           vars.next_cmd = SSL_Referee::FORCE_START;
 
-          setDescription("Multiple defenders (partial) (by %s %X at <%.0f,%.0f>)",
+          setDescription("Multiple defenders (partial) (by %s %X at <%.0f,%.0f>, dist %.0f)",
                          TeamName(vars.toucher.team),
                          vars.toucher.id,
-                         V2COMP(r.loc));
+                         V2COMP(r.loc),
+                         own_dist);
           // TODO send card
 
           autoref_msg_valid = true;
@@ -819,11 +820,11 @@ const char TooManyRobotsEvent::ID;
 
 char *id_str(const World &w, Team team)
 {
-  static char id_str[100];
+  static char id_str[500];
   id_str[0] = 0;
   for (const auto &r : w.robots) {
     if (r.team == team) {
-      sprintf(id_str + strlen(id_str), "%d, ", r.robot_id);
+      sprintf(id_str + strlen(id_str), "%d <%.0f,%.0f>, ", r.robot_id, r.loc.x, r.loc.y);
     }
   }
   id_str[strlen(id_str) - 2] = 0;
@@ -870,14 +871,15 @@ void TooManyRobotsEvent::_process(const World &w, bool ball_z_valid, float ball_
     offending_team = TeamBlue;
     blue_frames = 0;
     fired = true;
-    setDescription("Blue team has %d robots (max %d, ids: %s)", n_blue, max_blue, id_str(w, TeamBlue));
+    setDescription("[IGNORE THIS] Blue team has %d robots (max %d, ids: %s)", n_blue, max_blue, id_str(w, TeamBlue));
   }
 
   else if (yellow_frames > 300) {
     offending_team = TeamYellow;
     yellow_frames = 0;
     fired = true;
-    setDescription("Yellow team has %d robots (max %d, ids: %s)", n_yellow, max_yellow, id_str(w, TeamYellow));
+    setDescription(
+      "[IGNORE THIS] Yellow team has %d robots (max %d, ids: %s)", n_yellow, max_yellow, id_str(w, TeamYellow));
   }
 
   if (fired) {
