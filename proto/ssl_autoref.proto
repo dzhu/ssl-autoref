@@ -69,4 +69,6 @@ message SSL_Autoref {
     // Sign of the x-coordinate of the blue goal (used to distinguish goal kicks
     // and corner kicks).
     optional int32 blue_side = 8;
+
+    optional string autoref_name = 9;
 }

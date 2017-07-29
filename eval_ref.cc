@@ -139,6 +139,8 @@ bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z
     }
   }
 
+  message.set_autoref_name("CMDragons autoref");
+
   new_stage = (vars.stage != last_stage);
   new_cmd = (vars.cmd != last_command) && (vars.cmd != refbox_message.command());
 
