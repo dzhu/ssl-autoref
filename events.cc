@@ -188,7 +188,9 @@ void BallSpeedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   if (vars.state != REF_RUN) {
     return;
   }
-  if (vars.stage != SSL_Referee::NORMAL_FIRST_HALF && vars.stage != SSL_Referee::NORMAL_SECOND_HALF) {
+  if (vars.stage != SSL_Referee::NORMAL_FIRST_HALF && vars.stage != SSL_Referee::NORMAL_SECOND_HALF
+      && vars.stage != SSL_Referee::EXTRA_FIRST_HALF
+      && vars.stage != SSL_Referee::EXTRA_SECOND_HALF) {
     return;
   }
 
@@ -285,7 +287,9 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   if (vars.state != REF_RUN) {
     return;
   }
-  if (vars.stage != SSL_Referee::NORMAL_FIRST_HALF && vars.stage != SSL_Referee::NORMAL_SECOND_HALF) {
+  if (vars.stage != SSL_Referee::NORMAL_FIRST_HALF && vars.stage != SSL_Referee::NORMAL_SECOND_HALF
+      && vars.stage != SSL_Referee::EXTRA_FIRST_HALF
+      && vars.stage != SSL_Referee::EXTRA_SECOND_HALF) {
     return;
   }
 
@@ -541,7 +545,9 @@ void KickReadyEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
       case SSL_Referee::NORMAL_START:
         // do necessary things if this the start of the period
-        if (vars.stage == SSL_Referee::NORMAL_FIRST_HALF_PRE || vars.stage == SSL_Referee::NORMAL_SECOND_HALF_PRE) {
+        if (vars.stage == SSL_Referee::NORMAL_FIRST_HALF_PRE || vars.stage == SSL_Referee::NORMAL_SECOND_HALF_PRE
+            || vars.stage == SSL_Referee::EXTRA_FIRST_HALF
+            || vars.stage == SSL_Referee::EXTRA_SECOND_HALF) {
           vars.stage = NextStage(vars.stage);
           vars.stage_end = w.time + TimeInHalf;
 
@@ -657,7 +663,9 @@ void GoalScoredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   if (vars.state != REF_RUN) {
     return;
   }
-  if (vars.stage != SSL_Referee::NORMAL_FIRST_HALF && vars.stage != SSL_Referee::NORMAL_SECOND_HALF) {
+  if (vars.stage != SSL_Referee::NORMAL_FIRST_HALF && vars.stage != SSL_Referee::NORMAL_SECOND_HALF
+      && vars.stage != SSL_Referee::EXTRA_FIRST_HALF
+      && vars.stage != SSL_Referee::EXTRA_SECOND_HALF) {
     return;
   }
 
