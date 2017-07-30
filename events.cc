@@ -203,6 +203,11 @@ void BallSpeedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   }
 
   double speed = dist(w.ball.loc, last_loc) / (w.time - last_time);
+  speed_hist.push_back(speed);
+  if (speed_hist.size() > 8) {
+    speed_hist.pop_front();
+  }
+
   if (speed > MaxKickSpeed * 1.02) {
     cnt++;
   }
@@ -213,7 +218,7 @@ void BallSpeedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   last_time = w.time;
   last_loc = w.ball.loc;
 
-  fired = cnt > 2;
+  fired = cnt > 3;
 
   if (fired) {
     vars.cmd = SSL_Referee::STOP;
@@ -221,7 +226,12 @@ void BallSpeedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     vars.reset = true;
     vars.reset_loc = BoundToField(w.ball.loc, 100, true);
     vars.state = REF_WAIT_STOP;
-    setDescription("Ball kicked too fast by %s team", TeamName(vars.toucher.team));
+    setDescription("Ball kicked too fast (%.3f m/s) by %s team", speed / 1000, TeamName(vars.toucher.team));
+
+    puts("speed history:");
+    for (double s : speed_hist) {
+      printf("- %.3f\n", s / 1000);
+    }
 
     autoref_msg_valid = true;
     setReplayTimes(vars.touch_time, w.time);
@@ -420,11 +430,15 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
           vars.cmd = SSL_Referee::STOP;
           vars.next_cmd = teamCommand(PREPARE_PENALTY, vars.toucher.team);
 
-          setDescription("Multiple defenders (entire) (by %s %X at <%.0f,%.0f>, dist %.0f)",
-                         TeamName(vars.toucher.team),
-                         vars.toucher.id,
-                         V2COMP(r.loc),
-                         own_dist);
+          setDescription(
+            "Multiple defenders (entire) (by %s %X at <%.0f,%.0f>, ddist %.0f, ball <%.0f,%.0f>, goalies: b %X y %X)",
+            TeamName(vars.toucher.team),
+            vars.toucher.id,
+            V2COMP(r.loc),
+            own_dist,
+            V2COMP(vars.touch_loc),
+            refbox.blue().goalie(),
+            refbox.yellow().goalie());
 
           autoref_msg_valid = true;
           setReplayTimes(vars.touch_time - 1, w.time);
@@ -436,11 +450,15 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
           vars.cmd = SSL_Referee::STOP;
           vars.next_cmd = SSL_Referee::FORCE_START;
 
-          setDescription("Multiple defenders (partial) (by %s %X at <%.0f,%.0f>, dist %.0f)",
-                         TeamName(vars.toucher.team),
-                         vars.toucher.id,
-                         V2COMP(r.loc),
-                         own_dist);
+          setDescription(
+            "Multiple defenders (partial) (by %s %X at <%.0f,%.0f>, ddist %.0f, ball <%.0f,%.0f>, goalies: b %X y %X)",
+            TeamName(vars.toucher.team),
+            vars.toucher.id,
+            V2COMP(r.loc),
+            own_dist,
+            V2COMP(vars.touch_loc),
+            refbox.blue().goalie(),
+            refbox.yellow().goalie());
           // TODO send card
 
           autoref_msg_valid = true;

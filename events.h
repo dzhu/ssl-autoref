@@ -1,6 +1,7 @@
 #pragma once
 
 #include <chrono>
+#include <deque>
 #include <random>
 #include <vector>
 
@@ -289,6 +290,8 @@ public:
 class BallSpeedEvent : public AutorefEvent
 {
   int cnt;
+
+  std::deque<double> speed_hist;
 
   vector2f last_loc;
   double last_time;
