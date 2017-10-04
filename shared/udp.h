@@ -25,7 +25,7 @@ static const int PORT_OFFSET =
   ;
 
 static const char *VisionGroup = "224.5.23.2";
-static const int VisionPort = 10005 + PORT_OFFSET;
+static const int VisionPort = 10006 + PORT_OFFSET;
 
 static const char *RefGroup = "224.5.23.1";
 static const int RefPort = 10003 + PORT_OFFSET;
