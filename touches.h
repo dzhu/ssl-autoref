@@ -28,6 +28,24 @@ public:
   virtual const char *name() = 0;
 };
 
+class AccelProcessor : public TouchProcessor
+{
+  RunningQueue<World, 100> history;
+  int last;
+
+public:
+  AccelProcessor()
+  {
+    history.init();
+  }
+
+  bool proc(const World &w, CollideResult &res);
+  const char *name()
+  {
+    return "AccelProcessor";
+  }
+};
+
 class LineCheckProcessor : public TouchProcessor
 {
   RunningQueue<World, 100> history;

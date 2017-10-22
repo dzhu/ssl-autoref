@@ -401,7 +401,7 @@ public:
 
   BallTouchedEvent(BaseAutoref *_ref) : AutorefEvent(_ref)
   {
-    // TODO add old accel-based processor
+    procs.push_back(new AccelProcessor());
     procs.push_back(new BackTrackProcessor());
     procs.push_back(new RobotDistProcessor());
   }

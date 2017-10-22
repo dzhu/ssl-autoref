@@ -474,7 +474,7 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
         vars.toucher.id = res.robot_id;
         vars.touch_loc = w.ball.loc;  // TODO compute and use past touch location in detectors
         vars.touch_time = w.time;
-        setDescription("Ball touched by %s team", TeamName(vars.toucher.team));
+        setDescription("Ball touched by %s %X [%s]", TeamName(vars.toucher.team), res.robot_id, proc->name());
         break;
       }
     }

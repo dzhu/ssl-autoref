@@ -1,5 +1,47 @@
 #include "touches.h"
 
+bool AccelProcessor::proc(const World &w, CollideResult &res)
+{
+  history.add(w);
+
+  double t = w.time;
+  if (w.ball.conf < .1) {
+    return false;
+  }
+
+  if (history.size() < 3) {
+    return false;
+  }
+
+  vector2f delta = history[-1].ball.loc - (history[0].ball.loc + history[-2].ball.loc) / 2;
+  double accel = delta.length() * FrameRate * FrameRate;
+
+  if (accel < 2000) {
+    return false;
+  }
+
+  vector2f ball_pt = history[-1].ball.loc;
+  double closest_dist = HUGE_VALF;
+  WorldRobot closest_robot;
+  for (const auto &r : w.robots) {
+    if (dist(r.loc, ball_pt) < closest_dist) {
+      closest_dist = dist(r.loc, ball_pt);
+      closest_robot = r;
+    }
+  }
+
+  bool near = closest_dist < MaxRobotRadius + BallRadius + 10;
+  if (!near) {
+    return false;
+  }
+
+  res.team = closest_robot.team;
+  res.robot_id = closest_robot.robot_id;
+  res.time = history[-1].time;
+
+  return true;
+}
+
 bool LineCheckProcessor::proc(const World &w, CollideResult &res)
 {
   last++;
@@ -57,7 +99,8 @@ bool LineCheckProcessor::proc(const World &w, CollideResult &res)
     return false;
   }
 
-  res.time = t;
+  // TODO something more accurate?
+  res.time = history[-2].time;
   last = 0;
   return true;
 }
@@ -117,7 +160,7 @@ bool RobotDistProcessor::proc(const World &w, CollideResult &res)
         && inter.length() < hist[0].v.length()) {
       res.team = r.team;
       res.robot_id = r.robot_id;
-      res.time = t;
+      res.time = t - 2 * FramePeriod;
       found = true;
     }
   }
@@ -190,7 +233,7 @@ bool BackTrackProcessor::proc(const World &w, CollideResult &res)
       if (old_pos.length() < MaxRobotRadius + BallRadius - 10) {
         res.team = r.team;
         res.robot_id = r.robot_id;
-        res.time = t;
+        res.time = t - 2 * FramePeriod;
         found = true;
       }
     }
