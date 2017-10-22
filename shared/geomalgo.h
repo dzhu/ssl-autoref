@@ -264,8 +264,9 @@ double closest_point_time(const vector x1, const vector v1, const vector x2, con
   if (sl < EPSILON) return (0.0);  // parallel tracks, any time is ok.
 
   t = -v.dot(x1 - x2) / sl;
-  if (t < 0.0) return (0.0);  // nearest time was in the past, now
-                              // is closest point from now on.
+  if (t < 0.0)
+    return (0.0);  // nearest time was in the past, now
+                   // is closest point from now on.
 
   return (t);
 }

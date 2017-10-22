@@ -11,7 +11,7 @@ void logMessage(Message &drawing, ostream &out)
 {
   uint32_t sz = drawing.ByteSize();
   printf("logging %d bytes\n", sz);
-  out.write((const char *)&sz, 4);
+  out.write(reinterpret_cast<const char *>(&sz), 4);
   drawing.SerializeToOstream(&out);
   out.flush();
 }

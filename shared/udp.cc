@@ -18,7 +18,7 @@ bool Address::setHost(const char *hostname, int port)
   freeaddrinfo(res);
 
   // set port for internet sockets
-  sockaddr_in *sockname = reinterpret_cast<sockaddr_in *>(&addr);
+  auto *sockname = reinterpret_cast<sockaddr_in *>(&addr);
   if (sockname->sin_family == AF_INET) {
     sockname->sin_port = htons(port);
   }
@@ -32,7 +32,7 @@ bool Address::setHost(const char *hostname, int port)
 void Address::setAny(int port)
 {
   memset(&addr, 0, sizeof(addr));
-  sockaddr_in *s = reinterpret_cast<sockaddr_in *>(&addr);
+  auto *s = reinterpret_cast<sockaddr_in *>(&addr);
   s->sin_addr.s_addr = htonl(INADDR_ANY);
   s->sin_port = htons(port);
   addr_len = sizeof(sockaddr_in);
@@ -40,7 +40,7 @@ void Address::setAny(int port)
 
 in_addr_t Address::getInAddr() const
 {
-  const sockaddr_in *s = reinterpret_cast<const sockaddr_in *>(&addr);
+  const auto *s = reinterpret_cast<const sockaddr_in *>(&addr);
   return s->sin_addr.s_addr;
 }
 

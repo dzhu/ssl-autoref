@@ -1741,12 +1741,8 @@ struct PrintUsageImplementation
     if (ch == 0x303F) return false;
 
     return ((0x1100 <= ch && ch <= 0x115F) || (0x2329 <= ch && ch <= 0x232A) || (0x2E80 <= ch && ch <= 0xA4C6)
-            || (0xA960 <= ch && ch <= 0xA97C)
-            || (0xAC00 <= ch && ch <= 0xD7FB)
-            || (0xF900 <= ch && ch <= 0xFAFF)
-            || (0xFE10 <= ch && ch <= 0xFE6B)
-            || (0xFF01 <= ch && ch <= 0xFF60)
-            || (0xFFE0 <= ch && ch <= 0xFFE6)
+            || (0xA960 <= ch && ch <= 0xA97C) || (0xAC00 <= ch && ch <= 0xD7FB) || (0xF900 <= ch && ch <= 0xFAFF)
+            || (0xFE10 <= ch && ch <= 0xFE6B) || (0xFF01 <= ch && ch <= 0xFF60) || (0xFFE0 <= ch && ch <= 0xFFE6)
             || (0x1B000 <= ch));
   }
 

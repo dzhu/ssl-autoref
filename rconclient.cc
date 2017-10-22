@@ -26,7 +26,7 @@
 
 bool RemoteClient::recvFully(void *buffer, std::size_t length)
 {
-  char *ptr = static_cast<char *>(buffer);
+  auto *ptr = static_cast<char *>(buffer);
   while (length != 0) {
     ssize_t ret = recv(sock, ptr, length, 0);
     if (ret < 0) {
@@ -45,7 +45,7 @@ bool RemoteClient::recvFully(void *buffer, std::size_t length)
 
 bool RemoteClient::sendFully(const void *buffer, std::size_t length)
 {
-  const char *ptr = static_cast<const char *>(buffer);
+  const auto *ptr = static_cast<const char *>(buffer);
   while (length != 0) {
     ssize_t ret = send(sock, ptr, length, 0);
     if (ret < 0) {
