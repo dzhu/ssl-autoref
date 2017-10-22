@@ -1,6 +1,7 @@
 #pragma once
 
 #include <math.h>
+#include <stdint.h>
 
 static const double TimeInHalf = 600;
 static const double TimeInHalftime = 300;
@@ -37,3 +38,42 @@ static const float DefenseStretchH = 250;
 static const float DefenseRadius = 1000;
 
 static const float MaxKickSpeed = 8000;
+
+struct RobotID
+{
+  Team team;
+  uint8_t id;
+
+  RobotID() : team(TeamNone), id(MaxRobotIds)
+  {
+  }
+  RobotID(Team t, uint8_t i) : team(t), id(i)
+  {
+  }
+
+  void set(Team t, uint8_t i)
+  {
+    team = t;
+    id = i;
+  }
+
+  void clear()
+  {
+    set(TeamNone, MaxRobotIds);
+  }
+
+  bool isValid() const
+  {
+    return (team == TeamBlue || team == TeamYellow) && (id >= 0 && id < MaxRobotIds);
+  }
+
+  bool operator==(RobotID other) const
+  {
+    return team == other.team && id == other.id;
+  }
+
+  bool operator!=(RobotID other) const
+  {
+    return !(*this == other);
+  }
+};

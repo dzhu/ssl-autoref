@@ -30,40 +30,6 @@ enum RefGameState
 
 extern const char *ref_state_names[];
 
-struct RobotID
-{
-  Team team;
-  uint8_t id;
-
-  RobotID() : team(TeamNone), id(MaxRobotIds)
-  {
-  }
-  RobotID(Team t, uint8_t i) : team(t), id(i)
-  {
-  }
-
-  void set(Team t, uint8_t i)
-  {
-    team = t;
-    id = i;
-  }
-
-  void clear()
-  {
-    set(TeamNone, MaxRobotIds);
-  }
-
-  bool isValid()
-  {
-    return (team == TeamBlue || team == TeamYellow) && (id >= 0 && id < MaxRobotIds);
-  }
-
-  bool operator==(RobotID other)
-  {
-    return team == other.team && id == other.id;
-  }
-};
-
 struct AutorefVariables
 {
   RefGameState state;

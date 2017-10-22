@@ -35,7 +35,6 @@ bool AccelProcessor::proc(const World &w, CollideResult &res)
     return false;
   }
 
-  res.team = closest_robot.team;
   res.robot_id = closest_robot.robot_id;
   res.time = history[-1].time;
 
@@ -81,7 +80,6 @@ bool LineCheckProcessor::proc(const World &w, CollideResult &res)
     }
   }
 
-  res.team = closest_robot.team;
   res.robot_id = closest_robot.robot_id;
 
   // make sure robot comes near ball at some point (TODO use interframe locations)
@@ -123,7 +121,7 @@ bool RobotDistProcessor::proc(const World &w, CollideResult &res)
     }
     vector2f v = ball.loc - r.loc;
 
-    RunningQueue<tvec, 6> &hist = robot_history[r.team][r.robot_id];
+    RunningQueue<tvec, 6> &hist = robot_history[r.robot_id.team][r.robot_id.id];
     hist.add(tvec(t, v));
 
     if (hist.size() < 6) {
@@ -158,7 +156,6 @@ bool RobotDistProcessor::proc(const World &w, CollideResult &res)
 
     if (inter.length() < MaxRobotRadius + BallRadius + 30 && inter.length() < hist[-5].v.length()
         && inter.length() < hist[0].v.length()) {
-      res.team = r.team;
       res.robot_id = r.robot_id;
       res.time = t - 2 * FramePeriod;
       found = true;
@@ -194,7 +191,7 @@ bool BackTrackProcessor::proc(const World &w, CollideResult &res)
     }
     vector2f v = ball.loc - r.loc;
 
-    RunningQueue<tvec, HIST_LEN> &hist = robot_history[r.team][r.robot_id];
+    RunningQueue<tvec, HIST_LEN> &hist = robot_history[r.robot_id.team][r.robot_id.id];
     hist.add(tvec(t - t0, v));
 
     // not enough samples yet; give up
@@ -231,7 +228,6 @@ bool BackTrackProcessor::proc(const World &w, CollideResult &res)
     for (int i = -2; i < 0; i++) {
       vector2f old_pos(p0 + i * FramePeriod * v0);
       if (old_pos.length() < MaxRobotRadius + BallRadius - 10) {
-        res.team = r.team;
         res.robot_id = r.robot_id;
         res.time = t - 2 * FramePeriod;
         found = true;

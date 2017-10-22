@@ -300,13 +300,13 @@ int8_t GuessBlueSide(const World &w)
   for (const auto &r : w.robots) {
     if (r.visible()) {
       if (DistToDefenseArea(r.loc, true) < -MaxRobotRadius) {
-        blue_right_weight += 5 * FieldLengthH * ((r.team == TeamBlue) ? 1 : -1);
+        blue_right_weight += 5 * FieldLengthH * ((r.robot_id.team == TeamBlue) ? 1 : -1);
       }
       else if (DistToDefenseArea(r.loc, false) < -MaxRobotRadius) {
-        blue_right_weight += -5 * FieldLengthH * ((r.team == TeamBlue) ? 1 : -1);
+        blue_right_weight += -5 * FieldLengthH * ((r.robot_id.team == TeamBlue) ? 1 : -1);
       }
       else {
-        blue_right_weight += r.loc.x * ((r.team == TeamBlue) ? 1 : -1);
+        blue_right_weight += r.loc.x * ((r.robot_id.team == TeamBlue) ? 1 : -1);
       }
     }
   }

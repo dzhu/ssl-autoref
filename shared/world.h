@@ -10,8 +10,7 @@ struct WorldRobot
 {
   float conf;
 
-  Team team;
-  uint8_t robot_id;
+  RobotID robot_id;
 
   float angle;
   vector2f loc, vel;
@@ -21,7 +20,7 @@ struct WorldRobot
     return conf > .1;
   }
 
-  WorldRobot() : conf(0), team(TeamNone), robot_id(0), angle(0), loc(0, 0), vel(0, 0)
+  WorldRobot() : conf(0), angle(0), loc(0, 0), vel(0, 0)
   {
   }
 };
@@ -36,7 +35,9 @@ struct WorldBall
     return conf > .1;
   }
 
-  WorldBall() : loc(0, 0), vel(0, 0), conf(0) {}
+  WorldBall() : loc(0, 0), vel(0, 0), conf(0)
+  {
+  }
 };
 
 struct World

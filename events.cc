@@ -217,7 +217,7 @@ void RobotsStartedEvent::_process(const World &w, bool ball_z_valid, float ball_
   int seen = 0;
   for (const auto &r : w.robots) {
     if (r.visible() && r.vel.length() > 30) {
-      seen |= (1 << r.team);
+      seen |= (1 << r.robot_id.team);
     }
   }
 
@@ -470,11 +470,10 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     for (auto &proc : procs) {
       if (proc->proc(w, res)) {
         fired = true;
-        vars.toucher.team = res.team;
-        vars.toucher.id = res.robot_id;
+        vars.toucher = res.robot_id;
         vars.touch_loc = w.ball.loc;  // TODO compute and use past touch location in detectors
         vars.touch_time = w.time;
-        setDescription("Ball touched by %s %X [%s]", TeamName(vars.toucher.team), res.robot_id, proc->name());
+        setDescription("Ball touched by %s %X [%s]", TeamName(vars.toucher.team), res.robot_id.id, proc->name());
         break;
       }
     }
@@ -487,11 +486,11 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
     // check if the robot touched the ball while in one of the defense areas
     for (const auto &r : w.robots) {
-      if (r.team != vars.toucher.team || r.robot_id != vars.toucher.id) {
+      if (r.robot_id != vars.toucher) {
         continue;
       }
 
-      bool own_side_positive_x = (vars.blue_side > 0) == (r.team == TeamBlue);
+      bool own_side_positive_x = (vars.blue_side > 0) == (r.robot_id.team == TeamBlue);
       double own_dist = DistToDefenseArea(r.loc, own_side_positive_x);
       auto &refbox = ref->getRefboxMessage();
       uint32_t goalie_id = (vars.toucher.team == TeamBlue ? refbox.blue() : refbox.yellow()).goalie();
@@ -692,7 +691,7 @@ void KickTakenEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DEFENSE_AREA_DISTANCE, offender);
       WorldRobot off;
       for (const auto &r : w.robots) {
-        if (RobotID(r.team, r.robot_id) == offender) {
+        if (r.robot_id == offender) {
           off = r;
           break;
         }
@@ -714,12 +713,12 @@ RobotID KickTakenEvent::checkDefenseAreaDistanceInfraction(const World &w) const
 {
   bool positive_x = (vars.blue_side > 0) != (vars.kicker.team == TeamBlue);
   for (const auto &robot : w.robots) {
-    if (robot.team != vars.kicker.team) {
+    if (robot.robot_id.team != vars.kicker.team) {
       continue;
     }
 
     if (DistToDefenseArea(robot.loc, positive_x) < MaxRobotRadius + 200) {
-      return RobotID(robot.team, robot.robot_id);
+      return robot.robot_id;
     }
   }
   return RobotID();
@@ -858,7 +857,7 @@ void LongDribbleEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     }
 
     vector2f ball_local = (ball.loc - r.loc).rotate(-r.angle);
-    DribbleRecord &d = dribble[r.team][r.robot_id];
+    DribbleRecord &d = dribble[r.robot_id.team][r.robot_id.id];
 
     double InX = DribblerOffset;
 
@@ -881,12 +880,12 @@ void LongDribbleEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
       if (dist(r.loc, d.start_loc) > 1000) {
         fired = true;
-        setDescription("Ball dribbled too far by robot %s-%X", TeamName(r.team), r.robot_id);
+        setDescription("Ball dribbled too far by robot %s-%X", TeamName(r.robot_id.team), r.robot_id.id);
 
         autoref_msg_valid = true;
         // TODO compute start time
         setReplayTimes(w.time - 3, w.time);
-        setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DRIBBLING, RobotID(r.team, r.robot_id));
+        setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DRIBBLING, r.robot_id);
         setDesignatedPoint(legalPosition(d.start_loc));
       }
     }
@@ -943,8 +942,8 @@ char *id_str(const World &w, Team team)
   static char id_str[500];
   id_str[0] = 0;
   for (const auto &r : w.robots) {
-    if (r.team == team) {
-      sprintf(id_str + strlen(id_str), "%d <%.0f,%.0f>, ", r.robot_id, r.loc.x, r.loc.y);
+    if (r.robot_id.team == team) {
+      sprintf(id_str + strlen(id_str), "%d <%.0f,%.0f>, ", r.robot_id.id, r.loc.x, r.loc.y);
     }
   }
   id_str[strlen(id_str) - 2] = 0;
@@ -963,7 +962,7 @@ void TooManyRobotsEvent::_process(const World &w, bool ball_z_valid, float ball_
 
   int n_blue = 0, n_yellow = 0;
   for (const auto &robot : w.robots) {
-    if (robot.team == TeamBlue) {
+    if (robot.robot_id.team == TeamBlue) {
       n_blue++;
     }
     else {
@@ -1027,7 +1026,7 @@ void RobotSpeedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   else {
     for (const auto &robot : w.robots) {
       if (robot.vel.length() > GameOffRobotSpeedLimit) {
-        violation_frames[static_cast<int>(robot.team)]++;
+        violation_frames[static_cast<int>(robot.robot_id.team)]++;
       }
     }
 
@@ -1058,7 +1057,7 @@ void StopDistanceEvent::_process(const World &w, bool ball_z_valid, float ball_z
 
   for (const auto &robot : w.robots) {
     if ((robot.loc - w.ball.loc).length() < dist) {
-      violation_frames[static_cast<int>(robot.team)]++;
+      violation_frames[static_cast<int>(robot.robot_id.team)]++;
     }
   }
 
