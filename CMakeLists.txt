@@ -25,6 +25,7 @@ file (MAKE_DIRECTORY ${PROTO_OUT_PATH})
 include_directories (${PROTO_OUT_PATH})
 
 set (PROTO_FILES
+  drawing
   messages_robocup_ssl_detection
   messages_robocup_ssl_geometry
   messages_robocup_ssl_wrapper

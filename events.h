@@ -13,6 +13,7 @@
 #include "util.h"
 #include "world.h"
 
+#include "drawing.pb.h"
 #include "ssl_autoref.pb.h"
 #include "ssl_referee.pb.h"
 
@@ -122,6 +123,7 @@ protected:
   string description;
   ssl::SSL_Autoref autoref_msg;
   bool autoref_msg_valid;
+  std::vector<DrawingFrame> drawings;
 
   bool isEnabled()
   {
@@ -179,6 +181,11 @@ protected:
   }
 
 public:
+  std::vector<DrawingFrame> getDrawings()
+  {
+    return drawings;
+  }
+
   void process(const World &w, bool ball_z_valid, float ball_z)
   {
     fired_last = fired;
@@ -191,6 +198,7 @@ public:
     vars = refVars();
     autoref_msg.Clear();
     autoref_msg_valid = false;
+    drawings.clear();
     _process(w, ball_z_valid, ball_z);
   }
 

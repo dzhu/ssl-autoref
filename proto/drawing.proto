@@ -1,0 +1,63 @@
+message Vector
+{
+  required double x = 1;
+  required double y = 2;
+}
+
+message DrawingFrame
+{
+  message ReplayInfo
+  {
+    optional double start_timestamp = 1;
+    optional double end_timestamp = 2;
+  }
+
+  message FilterInfo
+  {
+    // repeated uint32 tree_inds = 1;
+    required string entity = 1;
+    required int32 level = 2;
+  }
+
+  message Circle
+  {
+    required double radius = 1;
+    required Vector center = 2;
+    required uint32 color = 3;
+
+    required FilterInfo filter = 15;
+    optional ReplayInfo replay = 16;
+  }
+  message Line
+  {
+    required Vector start = 1;
+    required Vector end = 2;
+    required uint32 color = 3;
+
+    required FilterInfo filter = 15;
+    optional ReplayInfo replay = 16;
+  }
+  message Rectangle
+  {
+    required Vector center = 1;
+    required double orientation = 2;
+    required uint32 length = 3;
+    required uint32 width = 4;
+    required uint32 color = 5;
+
+    required FilterInfo filter = 15;
+    optional ReplayInfo replay = 16;
+  }
+
+  required double timestamp = 1;
+
+  // if present, indicates that the contents of this frame are relevant from
+  // timestamp to end_timestamp; otherwise, they are treated as instantaneous at
+  // the timestamp
+  optional double end_timestamp = 2;
+
+  repeated Circle circle = 3;
+  repeated Line line = 4;
+  repeated Rectangle rectangle = 5;
+
+}

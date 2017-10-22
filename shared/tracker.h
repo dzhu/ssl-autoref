@@ -20,7 +20,9 @@ public:
     vector2f loc;
     float angle;
 
-    Observation() : valid(false), last_valid(0), time(0), conf(0), loc(0, 0), angle(0) {}
+    Observation() : valid(false), last_valid(0), time(0), conf(0), loc(0, 0), angle(0)
+    {
+    }
   };
 
   struct ObjectTracker
@@ -39,6 +41,7 @@ public:
 private:
   bool cameras_seen[MaxCameras];
   int num_cameras, num_cameras_seen;
+  double last_capture_time;
 
   bool ready;
 
@@ -54,7 +57,7 @@ public:
   ObjectTracker robots[NumTeams][MaxRobotIds];
   ObjectTracker ball;
 
-  Tracker() : frames(0), ready(false), num_cameras(0), num_cameras_seen(0)
+  Tracker() : num_cameras(0), num_cameras_seen(0), last_capture_time(0), ready(false), frames(0)
   {
     for (bool &s : cameras_seen) {
       s = false;

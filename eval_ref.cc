@@ -4,7 +4,19 @@
 #include "eval_ref.h"
 #include "events.h"
 
-EvaluationAutoref::EvaluationAutoref(bool verbose_) : verbose(verbose_)
+#include <fstream>
+#include <iostream>
+
+void logMessage(Message &drawing, ostream &out)
+{
+  uint32_t sz = drawing.ByteSize();
+  printf("logging %d bytes\n", sz);
+  out.write((const char *)&sz, 4);
+  drawing.SerializeToOstream(&out);
+  out.flush();
+}
+
+EvaluationAutoref::EvaluationAutoref(bool verbose_) : BaseAutoref(), verbose(verbose_)
 {
   vars.state = REF_RUN;
   vars.stage = SSL_Referee::NORMAL_FIRST_HALF;
@@ -20,6 +32,8 @@ EvaluationAutoref::EvaluationAutoref(bool verbose_) : verbose(verbose_)
   addEvent<RobotSpeedEvent>();
   addEvent<StopDistanceEvent>();
   addEvent<BallStuckEvent>();
+
+  log = new ofstream("autoref.dlog");
 }
 
 bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z)
@@ -48,6 +62,17 @@ bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z
       state_updated = true;
 
       AutorefVariables new_vars = ev->getUpdate();
+
+      auto drawings = ev->getDrawings();
+      for (auto d : drawings) {
+        printf("drawing: %.3f -> %.3f  %d %d %d\n",
+               d.timestamp(),
+               d.end_timestamp(),
+               d.line_size(),
+               d.circle_size(),
+               d.rectangle_size());
+        logMessage(d, *log);
+      }
 
       const SSL_Referee &ref = getRefboxMessage();
 

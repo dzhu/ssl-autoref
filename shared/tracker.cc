@@ -88,6 +88,7 @@ void Tracker::updateVision(const SSL_DetectionFrame &d)
   }
 
   double time = d.t_capture();
+  last_capture_time = time;
 
   // static uint64_t times[4] = {0};
   // uint64_t tm = GetTimeMicros();
@@ -217,7 +218,7 @@ void Tracker::makeWorld()
 
   bool debug = false;
 
-  world.time = GetTimeMicros() / 1e6;
+  world.time = last_capture_time;  // GetTimeMicros() / 1e6;
   for (int team = 0; team < NumTeams; team++) {
     for (int id = 0; id < MaxRobotIds; id++) {
       ObjectTracker &robot = robots[team][id];

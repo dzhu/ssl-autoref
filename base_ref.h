@@ -10,8 +10,8 @@
 
 #include "messages_robocup_ssl_wrapper.pb.h"
 #include "rcon.pb.h"
-#include "ssl_referee.pb.h"
 #include "ssl_autoref.pb.h"
+#include "ssl_referee.pb.h"
 
 #include "constants.h"
 #include "events.h"
@@ -23,6 +23,8 @@ using namespace google::protobuf;
 class BaseAutoref
 {
 protected:
+  ostream *log;
+
   bool have_geometry, new_refbox;
   SSL_GeometryData geometry;
   SSL_Referee refbox_message;
@@ -118,8 +120,9 @@ public:
     return state_updated;
   }
 
-  template<typename Fun>
-  void forEachEvent(Fun f){
+  template <typename Fun>
+  void forEachEvent(Fun f)
+  {
     std::for_each(events.begin(), events.end(), f);
   }
 };

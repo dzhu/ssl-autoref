@@ -14,6 +14,60 @@ const char *ref_state_names[] = {
 #include "ref_states.def"
 };
 
+class DrawingFrameWrapper
+{
+public:
+  DrawingFrame drawing;
+
+  DrawingFrameWrapper(double timestamp)
+  {
+    drawing.set_timestamp(timestamp);
+  }
+  DrawingFrameWrapper(double timestamp, double end_timestamp)
+  {
+    drawing.set_timestamp(timestamp);
+    drawing.set_end_timestamp(end_timestamp);
+  }
+
+  void line(std::string entity, int level, uint32_t color, double x0, double y0, double x1, double y1)
+  {
+    auto &line = *drawing.mutable_line()->Add();
+    line.mutable_start()->set_x(x0);
+    line.mutable_start()->set_y(y0);
+    line.mutable_end()->set_x(x1);
+    line.mutable_end()->set_y(y1);
+
+    line.set_color(color);
+    line.mutable_filter()->set_level(level);
+    line.mutable_filter()->set_entity(entity);
+  }
+  void circle(std::string entity, int level, uint32_t color, double x, double y, double r)
+  {
+    auto &circle = *drawing.mutable_circle()->Add();
+    circle.mutable_center()->set_x(x);
+    circle.mutable_center()->set_y(y);
+    circle.set_radius(r);
+
+    circle.set_color(color);
+    circle.mutable_filter()->set_level(level);
+    circle.mutable_filter()->set_entity(entity);
+  }
+  void rectangle(
+    std::string entity, int level, uint32_t color, double x, double y, double l, double w, double orientation)
+  {
+    auto &rect = *drawing.mutable_rectangle()->Add();
+    rect.mutable_center()->set_x(x);
+    rect.mutable_center()->set_y(y);
+    rect.set_length(l);
+    rect.set_width(w);
+    rect.set_orientation(orientation);
+
+    rect.set_color(color);
+    rect.mutable_filter()->set_level(level);
+    rect.mutable_filter()->set_entity(entity);
+  }
+};
+
 SSL_Referee::Stage NextStage(SSL_Referee::Stage s)
 {
   switch (s) {
@@ -329,6 +383,17 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   fired = cnt > 1;
 
   if (fired) {
+    {
+      DrawingFrameWrapper drawing(vars.touch_time, w.time);
+      drawing.line("",
+                   0,
+                   vars.toucher.isValid() ? (vars.toucher.team == TeamBlue ? 0x0000ff : 0xffff00) : 0x888888,
+                   V2COMP(vars.touch_loc),
+                   V2COMP(w.ball.loc));
+
+      drawings.push_back(drawing.drawing);
+    }
+
     char id_str[10];
     if (!vars.toucher.isValid()) {
       vars.toucher.team = RandomTeam();
@@ -409,13 +474,17 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
         vars.toucher.id = res.robot_id;
         vars.touch_loc = w.ball.loc;  // TODO compute and use past touch location in detectors
         vars.touch_time = w.time;
-        // setDescription("Ball touched by %s team", TeamName(vars.toucher.team));
+        setDescription("Ball touched by %s team", TeamName(vars.toucher.team));
         break;
       }
     }
   }
 
   if (fired && vars.state == REF_RUN) {
+    DrawingFrameWrapper drawing(w.time, w.time + .5);
+    drawing.circle("", 0, vars.toucher.team == TeamBlue ? 0x0000ff : 0xffff00, V2COMP(vars.touch_loc), 250);
+    drawings.push_back(drawing.drawing);
+
     // check if the robot touched the ball while in one of the defense areas
     for (const auto &r : w.robots) {
       if (r.team != vars.toucher.team || r.robot_id != vars.toucher.id) {
@@ -448,6 +517,10 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
           setReplayTimes(vars.touch_time - 1, w.time);
           setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DEFENDER_DEFENSE_AREA_FULL, vars.toucher);
           setDesignatedPoint(legalPosition(vars.touch_loc));
+
+          DrawingFrameWrapper drawing(w.time, w.time + .5);
+          drawing.circle("", 0, 0xff0000, V2COMP(vars.touch_loc), 150);
+          drawings.push_back(drawing.drawing);
         }
         else if (own_dist < MaxRobotRadius) {
           vars.state = REF_WAIT_STOP;
@@ -469,6 +542,10 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
           setReplayTimes(vars.touch_time - 1, w.time);
           setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DEFENDER_DEFENSE_AREA_PARTIAL, vars.toucher);
           setDesignatedPoint(legalPosition(vars.touch_loc));
+
+          DrawingFrameWrapper drawing(w.time, w.time + .5);
+          drawing.circle("", 0, 0xff0000, V2COMP(vars.touch_loc), 150);
+          drawings.push_back(drawing.drawing);
         }
       }
       // check opponent defense area
@@ -484,6 +561,10 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
         setReplayTimes(vars.touch_time - 1, w.time);
         setFoulMessage(ssl::SSL_Autoref::RuleInfringement::ATTACKER_DEFENSE_AREA, vars.toucher);
         setDesignatedPoint(legalPosition(vars.touch_loc));
+
+        DrawingFrameWrapper drawing(w.time, w.time + .5);
+        drawing.circle("", 0, 0xffc000, V2COMP(vars.touch_loc), 150);
+        drawings.push_back(drawing.drawing);
       }
     }
   }
@@ -609,12 +690,18 @@ void KickTakenEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       autoref_msg_valid = true;
       setReplayTimes(w.time - 2, w.time);
       setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DEFENSE_AREA_DISTANCE, offender);
+      WorldRobot off;
       for (const auto &r : w.robots) {
         if (RobotID(r.team, r.robot_id) == offender) {
-          setDesignatedPoint(legalPosition(r.loc));
+          off = r;
           break;
         }
       }
+      setDesignatedPoint(legalPosition(off.loc));
+
+      DrawingFrameWrapper drawing(w.time - 1, w.time + 1);
+      drawing.circle("", 0, 0xff0000, V2COMP(off.loc), 200);
+      drawings.push_back(drawing.drawing);
     }
     else {
       vars.state = REF_RUN;
@@ -709,6 +796,7 @@ void GoalScoredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
            && (fabs(ball_loc.x) < FieldLengthH + GoalDepth));
 
   if (fired) {
+    int x_sign = sign(ball_loc.x);
     Team scoring_team = (vars.blue_side * ball_loc.x > 0) ? TeamYellow : TeamBlue;
     vars.team[scoring_team].score++;
 
@@ -719,6 +807,12 @@ void GoalScoredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     vars.reset = true;
     vars.reset_loc.set(0, 0);
     setDescription("Goal scored by %s team", TeamName(scoring_team));
+
+    DrawingFrameWrapper drawing(w.time, w.time + .5);
+    drawing.circle("", 0, scoring_team == TeamBlue ? 0x0000ff : 0xffff00, V2COMP(ball_loc), 80);
+    drawing.rectangle(
+      "", 0, 0x00ff00, x_sign * (FieldLengthH + GoalDepth / 2), 0, GoalWidthH * 2 + 500, GoalDepth + 500, 0);
+    drawings.push_back(drawing.drawing);
 
     autoref_msg_valid = true;
     auto goal = autoref_msg.mutable_goal();
