@@ -124,7 +124,7 @@ void Tracker::updateVision(const SSL_DetectionFrame &d)
   if (ball.affinity >= 0) {
     const Observation &last_ball = ball.obs[ball.affinity];
     if (last_ball.last_valid < 30) {
-      max_dist = 10000 * FramePeriod * last_ball.last_valid;
+      max_dist = 10000 * FramePeriod * last_ball.last_valid * 100;
       last_ball_loc = last_ball.loc;
     }
     if (debug) {
@@ -225,7 +225,7 @@ void Tracker::makeWorld()
       if (robot.mergeObservations() >= 0) {
         const Observation &obs = robot.obs[robot.affinity];
         WorldRobot wr;
-        wr.conf = (obs.last_valid < 2) * obs.conf;
+        wr.conf = (1 || obs.last_valid < 2) * obs.conf;
         wr.loc = obs.loc;
         wr.angle = obs.angle;
         wr.robot_id.set(static_cast<Team>(team), id);
@@ -242,7 +242,7 @@ void Tracker::makeWorld()
   if (ball.mergeObservations() >= 0) {
     const Observation &obs = ball.obs[ball.affinity];
     WorldBall &wb = world.ball;
-    wb.conf = (obs.last_valid < 2) * obs.conf;
+    wb.conf = (1 || obs.last_valid < 2) * obs.conf;
     wb.loc = obs.loc;
     wb.vel = ball.fitVelocity();
 

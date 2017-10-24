@@ -267,6 +267,8 @@ class BallSpeedEvent : public AutorefEvent
 
   std::deque<double> speed_hist;
 
+  std::deque<vector2f> last_locs;
+
   vector2f last_loc;
   double last_time;
 

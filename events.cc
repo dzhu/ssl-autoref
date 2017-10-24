@@ -257,6 +257,11 @@ void BallSpeedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     return;
   }
 
+  last_locs.push_back(w.ball.loc);
+  if (last_locs.size() > 5) {
+    last_locs.pop_front();
+  }
+
   double speed = dist(w.ball.loc, last_loc) / (w.time - last_time);
   speed_hist.push_back(speed);
   if (speed_hist.size() > 8) {
@@ -288,6 +293,14 @@ void BallSpeedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       printf("- %.3f\n", s / 1000);
     }
 
+    {
+      DrawingFrameWrapper drawing(w.time - .2, w.time + .5);
+      for (auto l : last_locs) {
+        drawing.circle("ball speed", 0, 0xffffff, V2COMP(l), 80);
+      }
+      drawings.push_back(drawing.drawing);
+    }
+
     autoref_msg_valid = true;
     setReplayTimes(vars.touch_time, w.time);
     setFoulMessage(ssl::SSL_Autoref::RuleInfringement::BALL_SPEED, vars.toucher);
@@ -299,6 +312,7 @@ const char BallStuckEvent::ID;
 
 void BallStuckEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 {
+  return;
   if (vars.state != REF_RUN) {
     stuck_count = 0;
     wait_frames = FrameRateInt;
@@ -317,6 +331,12 @@ void BallStuckEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     last_ball_loc = w.ball.loc;
 
     if (stuck_count > 12) {
+      {
+        DrawingFrameWrapper drawing(w.time - 12, w.time);
+        drawing.circle("ball stuck", 0, 0xffffff, V2COMP(w.ball.loc), 250);
+        drawings.push_back(drawing.drawing);
+      }
+
       stuck_count = 0;
       fired = true;
       vars.cmd = SSL_Referee::STOP;
@@ -383,7 +403,7 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   if (fired) {
     {
       DrawingFrameWrapper drawing(vars.touch_time, w.time);
-      drawing.line("",
+      drawing.line("ball out",
                    0,
                    vars.toucher.isValid() ? (vars.toucher.team == TeamBlue ? 0x0000ff : 0xffff00) : 0x888888,
                    V2COMP(vars.touch_loc),
@@ -469,9 +489,10 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       if (proc->proc(w, res)) {
         fired = true;
         vars.toucher = res.robot_id;
-        vars.touch_loc = w.ball.loc;  // TODO compute and use past touch location in detectors
-        vars.touch_time = w.time;
-        setDescription("Ball touched by %s %X [%s]", TeamName(vars.toucher.team), res.robot_id.id, proc->name());
+        vars.touch_loc = w.ball.loc;
+        vars.touch_time = res.time;
+        setDescription(
+          "%.3f Ball touched by %s %X [%s]", w.time, TeamName(vars.toucher.team), res.robot_id.id, proc->name());
         break;
       }
     }
@@ -479,7 +500,7 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
   if (fired && vars.state == REF_RUN) {
     DrawingFrameWrapper drawing(w.time, w.time + .5);
-    drawing.circle("", 0, vars.toucher.team == TeamBlue ? 0x0000ff : 0xffff00, V2COMP(vars.touch_loc), 250);
+    drawing.circle("ball touched", 0, vars.toucher.team == TeamBlue ? 0x0000ff : 0xffff00, V2COMP(vars.touch_loc), 250);
     drawings.push_back(drawing.drawing);
 
     // check if the robot touched the ball while in one of the defense areas
@@ -515,9 +536,11 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
           setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DEFENDER_DEFENSE_AREA_FULL, vars.toucher);
           setDesignatedPoint(legalPosition(vars.touch_loc));
 
-          DrawingFrameWrapper drawing(w.time, w.time + .5);
-          drawing.circle("", 0, 0xff0000, V2COMP(vars.touch_loc), 150);
-          drawings.push_back(drawing.drawing);
+          {
+            DrawingFrameWrapper drawing(w.time - .5, w.time + .5);
+            drawing.circle("touched in own area", 0, 0xff0000, V2COMP(vars.touch_loc), 150);
+            drawings.push_back(drawing.drawing);
+          }
         }
         else if (own_dist < MaxRobotRadius) {
           vars.state = REF_WAIT_STOP;
@@ -525,7 +548,8 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
           vars.next_cmd = SSL_Referee::FORCE_START;
 
           setDescription(
-            "Multiple defenders (partial) (by %s %X at <%.0f,%.0f>, ddist %.0f, ball <%.0f,%.0f>, goalies: b %X y %X)",
+            "Multiple defenders (partial) (by %s %X at <%.0f,%.0f>, ddist %.0f, ball <%.0f,%.0f>, goalies: b %X y "
+            "%X)",
             TeamName(vars.toucher.team),
             vars.toucher.id,
             V2COMP(r.loc),
@@ -540,9 +564,11 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
           setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DEFENDER_DEFENSE_AREA_PARTIAL, vars.toucher);
           setDesignatedPoint(legalPosition(vars.touch_loc));
 
-          DrawingFrameWrapper drawing(w.time, w.time + .5);
-          drawing.circle("", 0, 0xff0000, V2COMP(vars.touch_loc), 150);
-          drawings.push_back(drawing.drawing);
+          {
+            DrawingFrameWrapper drawing(w.time - .5, w.time + .5);
+            drawing.circle("touched in own area", 0, 0xff0000, V2COMP(vars.touch_loc), 150);
+            drawings.push_back(drawing.drawing);
+          }
         }
       }
       // check opponent defense area
@@ -559,9 +585,11 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
         setFoulMessage(ssl::SSL_Autoref::RuleInfringement::ATTACKER_DEFENSE_AREA, vars.toucher);
         setDesignatedPoint(legalPosition(vars.touch_loc));
 
-        DrawingFrameWrapper drawing(w.time, w.time + .5);
-        drawing.circle("", 0, 0xffc000, V2COMP(vars.touch_loc), 150);
-        drawings.push_back(drawing.drawing);
+        {
+          DrawingFrameWrapper drawing(w.time - .5, w.time + .5);
+          drawing.circle("touched in other area", 0, 0xffc000, V2COMP(vars.touch_loc), 150);
+          drawings.push_back(drawing.drawing);
+        }
       }
     }
   }
@@ -695,10 +723,14 @@ void KickTakenEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       setDesignatedPoint(legalPosition(off.loc));
 
       DrawingFrameWrapper drawing(w.time - 1, w.time + 1);
-      drawing.circle("", 0, 0xff0000, V2COMP(off.loc), 200);
+      drawing.circle("too close at kick", 0, 0xff0000, V2COMP(off.loc), 200);
       drawings.push_back(drawing.drawing);
     }
     else {
+      DrawingFrameWrapper drawing(w.time - 1, w.time + 1);
+      drawing.circle("kick taken", 0, 0xff0000, V2COMP(w.ball.loc), 200);
+      drawings.push_back(drawing.drawing);
+
       vars.state = REF_RUN;
       setDescription("Kick taken");
     }
@@ -803,9 +835,9 @@ void GoalScoredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     setDescription("Goal scored by %s team", TeamName(scoring_team));
 
     DrawingFrameWrapper drawing(w.time, w.time + .5);
-    drawing.circle("", 0, scoring_team == TeamBlue ? 0x0000ff : 0xffff00, V2COMP(ball_loc), 80);
+    drawing.circle("goal scored", 0, scoring_team == TeamBlue ? 0x0000ff : 0xffff00, V2COMP(ball_loc), 80);
     drawing.rectangle(
-      "", 0, 0x00ff00, x_sign * (FieldLengthH + GoalDepth / 2), 0, GoalWidthH * 2 + 500, GoalDepth + 500, 0);
+      "goal scored", 0, 0x00ff00, x_sign * (FieldLengthH + GoalDepth / 2), 0, GoalWidthH * 2 + 500, GoalDepth + 500, 0);
     drawings.push_back(drawing.drawing);
 
     autoref_msg_valid = true;
@@ -1066,6 +1098,12 @@ void StopDistanceEvent::_process(const World &w, bool ball_z_valid, float ball_z
       autoref_msg_valid = true;
       setReplayTimes(w.time - 3, w.time);
       setFoulMessage(ssl::SSL_Autoref::RuleInfringement::STOP_BALL_DISTANCE, static_cast<Team>(team));
+
+      {
+        DrawingFrameWrapper drawing(w.time, w.time + .5);
+        drawing.circle("stop distance", 0, 0xff0000, V2COMP(w.ball.loc), 500);
+        drawings.push_back(drawing.drawing);
+      }
     }
   }
 }
