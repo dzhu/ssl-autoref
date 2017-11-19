@@ -1,4 +1,5 @@
 #include <cstdarg>
+#include <random>
 
 #include "geomalgo.h"
 #include "util.h"
