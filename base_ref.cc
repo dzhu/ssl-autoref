@@ -37,6 +37,7 @@ void BaseAutoref::updateReferee(const SSL_Referee &r)
 {
   new_refbox = true;
   refbox_message = r;
+  vars.blue_side = r.blue_team_on_positive_half() ? 1 : -1;
 }
 
 bool BaseAutoref::isMessageReady()
@@ -90,6 +91,7 @@ SSL_RefereeRemoteControlRequest BaseAutoref::makeRemote()
   SSL_RefereeRemoteControlRequest msg;
   msg.set_message_id(0);
   msg.set_last_command_counter(refbox_message.command_counter());
+  msg.set_implementation_id("cmdragons-autoref");
 
   if (new_cmd) {
     msg.set_command(vars.cmd);

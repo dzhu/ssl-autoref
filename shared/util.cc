@@ -273,25 +273,6 @@ uint64_t GetTimeMicros()
   return tv.tv_sec * 1000000 + tv.tv_nsec / 1000;
 }
 
-int8_t GuessBlueSide(const World &w)
-{
-  double blue_right_weight = 0;
-  for (const auto &r : w.robots) {
-    if (r.visible()) {
-      if (DistToDefenseArea(r.loc, true) < -Constants::MaxRobotRadius) {
-        blue_right_weight += 5 * Constants::FieldLengthH * ((r.robot_id.team == TeamBlue) ? 1 : -1);
-      }
-      else if (DistToDefenseArea(r.loc, false) < -Constants::MaxRobotRadius) {
-        blue_right_weight += -5 * Constants::FieldLengthH * ((r.robot_id.team == TeamBlue) ? 1 : -1);
-      }
-      else {
-        blue_right_weight += r.loc.x * ((r.robot_id.team == TeamBlue) ? 1 : -1);
-      }
-    }
-  }
-  return static_cast<int8_t>(sign_nz(blue_right_weight));
-}
-
 Team RandomTeam()
 {
   static std::default_random_engine generator(std::random_device{}());

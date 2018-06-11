@@ -157,7 +157,7 @@ message SSL_Referee {
 	// True, if the blue team will have it's goal on the positive x-axis of the ssl-vision coordinate system
 	// Obviously, the yellow team will play on the opposide half
 	// For compatibility, this field is optional
-	optional bool blueTeamOnPositiveHalf = 10;
+	optional bool blue_team_on_positive_half = 10;
 
 	// The game event that caused the referee command
 	optional SSL_Referee_Game_Event gameEvent = 11;

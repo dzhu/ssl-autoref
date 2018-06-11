@@ -657,9 +657,6 @@ void KickReadyEvent::_process(const World &w, bool ball_z_valid, float ball_z)
             || vars.stage == SSL_Referee::EXTRA_FIRST_HALF || vars.stage == SSL_Referee::EXTRA_SECOND_HALF) {
           vars.stage = NextStage(vars.stage);
           vars.stage_end = w.time + C::TimeInHalf;
-
-          // determine which team is on each side
-          vars.blue_side = GuessBlueSide(w);
         }
 
         vars.state = REF_WAIT_KICK;
@@ -700,8 +697,6 @@ void KickTakenEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   }
 
   if (fired) {
-    vars.blue_side = GuessBlueSide(w);
-
     RobotID offender = checkDefenseAreaDistanceInfraction(w);
     printf("kicker: %d %d\n", vars.kicker.team, vars.kicker.id);
     printf("infraction: %d %d\n", offender.team, offender.id);

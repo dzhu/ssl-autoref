@@ -44,11 +44,6 @@ bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z
   SSL_Referee::Stage last_stage = vars.stage;
   SSL_Referee::Command last_command = vars.cmd;
 
-  if (vars.blue_side == 0) {
-    vars.blue_side = GuessBlueSide(w);
-    printf("Initializing blue side to %d.\n", vars.blue_side);
-  }
-
   message.Clear();
   message_ready = false;
   state_updated = false;
