@@ -134,7 +134,7 @@ class BackTrackProcessor : public TouchProcessor
   int last;
 
 public:
-  BackTrackProcessor() : last(0), t0(0)
+  BackTrackProcessor() : t0(0), last(0)
   {
     for (int t = 0; t < NumTeams; t++) {
       for (int r = 0; r < MaxRobotIds; r++) {

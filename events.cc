@@ -3,6 +3,7 @@
 #include <cinttypes>
 
 #include "base_ref.h"
+#include "constants.h"
 #include "geomalgo.h"
 #include "util.h"
 
@@ -13,6 +14,8 @@
 const char *ref_state_names[] = {
 #include "ref_states.def"
 };
+
+using C = Constants;
 
 class DrawingFrameWrapper
 {
@@ -93,8 +96,8 @@ const AutorefVariables &AutorefEvent::refVars() const
 
 vector2f legalPosition(vector2f loc)
 {
-  if (fabs(loc.x) > FieldLengthH) {
-    loc.x = sign(loc.x) * FieldLengthH;
+  if (fabs(loc.x) > C::FieldLengthH) {
+    loc.x = sign(loc.x) * C::FieldLengthH;
   }
 
   if (DistToDefenseArea(loc, true) < 700) {
@@ -225,7 +228,7 @@ void RobotsStartedEvent::_process(const World &w, bool ball_z_valid, float ball_
     cnt++;
   }
 
-  fired = (cnt > FrameRateInt / 2);
+  fired = (cnt > C::FrameRateInt / 2);
   if (fired) {
     vars.next_cmd = SSL_Referee::PREPARE_KICKOFF_BLUE;
     vars.reset = true;
@@ -268,7 +271,7 @@ void BallSpeedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     speed_hist.pop_front();
   }
 
-  if (speed > MaxKickSpeed * 1.02) {
+  if (speed > C::MaxKickSpeed * 1.02) {
     cnt++;
   }
   else {
@@ -315,13 +318,13 @@ void BallStuckEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   return;
   if (vars.state != REF_RUN) {
     stuck_count = 0;
-    wait_frames = FrameRateInt;
+    wait_frames = C::FrameRateInt;
     last_ball_loc = w.ball.loc;
     return;
   }
 
   if (--wait_frames < 0) {
-    wait_frames = FrameRateInt;
+    wait_frames = C::FrameRateInt;
     if (dist(w.ball.loc, last_ball_loc) < 250) {
       stuck_count++;
     }
@@ -383,14 +386,14 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       linvel(ball_history, p0, v0);
 
       frames = min(lost_cnt, MAX_EXTRAPOLATE_FRAMES);
-      ball_loc = p0 + v0 * FramePeriod * (frames + ball_history.size() - 1);
+      ball_loc = p0 + v0 * C::FramePeriod * (frames + ball_history.size() - 1);
     }
   }
   else {
     ball_loc = w.ball.loc;
   }
 
-  bool f = !IsInField(ball_loc + 0 * (ball_loc - last_ball_loc), -BallRadius, false);
+  bool f = !IsInField(ball_loc + 0 * (ball_loc - last_ball_loc), -C::BallRadius, false);
 
   if (f) {
     cnt++;
@@ -428,7 +431,7 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
     vector2f out_loc = OutOfBoundsLoc(last_ball_loc, ball_loc - last_ball_loc);
     bool own_half = (vars.toucher.team == TeamBlue) == (vars.blue_side * out_loc.x > 0);
-    bool past_goal_line = fabs(out_loc.x) - fabs(out_loc.y) > FieldLengthH - FieldWidthH;
+    bool past_goal_line = fabs(out_loc.x) - fabs(out_loc.y) > C::FieldLengthH - C::FieldWidthH;
     bool crossed_midline = vars.touch_loc.x * out_loc.x < 0;
 
     // check for icing
@@ -446,7 +449,7 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     else {
       vector2f pos;
       if (past_goal_line) {
-        pos.set(sign(out_loc.x) * (FieldLengthH - (own_half ? 100 : 500)), sign(out_loc.y) * (FieldWidthH - 100));
+        pos.set(sign(out_loc.x) * (C::FieldLengthH - (own_half ? 100 : 500)), sign(out_loc.y) * (C::FieldWidthH - 100));
         vars.next_cmd = teamCommand(DIRECT_FREE, vars.kicker.team);
 
         if (own_half) {
@@ -457,7 +460,7 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
         }
       }
       else {
-        pos.set(out_loc.x, sign(out_loc.y) * (FieldWidthH - 100));
+        pos.set(out_loc.x, sign(out_loc.y) * (C::FieldWidthH - 100));
         vars.next_cmd = teamCommand(INDIRECT_FREE, vars.kicker.team);
         setDescription("Throw-in %s -- touched by %s", TeamName(FlipTeam(vars.toucher.team)), id_str);
       }
@@ -474,7 +477,7 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     }
   }
 
-  if (IsInField(ball_loc, -BallRadius, false)) {
+  if (IsInField(ball_loc, -C::BallRadius, false)) {
     last_ball_loc = ball_loc;
   }
 }
@@ -516,7 +519,7 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
       // check own defense area
       if (vars.toucher.id != goalie_id) {
-        if (own_dist < -MaxRobotRadius) {
+        if (own_dist < -C::MaxRobotRadius) {
           vars.state = REF_WAIT_STOP;
           vars.cmd = SSL_Referee::STOP;
           vars.next_cmd = teamCommand(PREPARE_PENALTY, vars.toucher.team);
@@ -542,7 +545,7 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
             drawings.push_back(drawing.drawing);
           }
         }
-        else if (own_dist < MaxRobotRadius) {
+        else if (own_dist < C::MaxRobotRadius) {
           vars.state = REF_WAIT_STOP;
           vars.cmd = SSL_Referee::STOP;
           vars.next_cmd = SSL_Referee::FORCE_START;
@@ -572,7 +575,7 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
         }
       }
       // check opponent defense area
-      if (DistToDefenseArea(r.loc, !own_side_positive_x) < MaxRobotRadius) {
+      if (DistToDefenseArea(r.loc, !own_side_positive_x) < C::MaxRobotRadius) {
         vars.state = REF_WAIT_STOP;
         vars.kicker.team = FlipTeam(vars.toucher.team);
         vars.cmd = SSL_Referee::STOP;
@@ -645,7 +648,7 @@ void KickReadyEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       case SSL_Referee::INDIRECT_FREE_BLUE:
       case SSL_Referee::INDIRECT_FREE_YELLOW:
         vars.state = REF_WAIT_KICK;
-        vars.kick_deadline = w.time + KickDeadline;
+        vars.kick_deadline = w.time + C::KickDeadline;
         break;
 
       case SSL_Referee::NORMAL_START:
@@ -653,14 +656,14 @@ void KickReadyEvent::_process(const World &w, bool ball_z_valid, float ball_z)
         if (vars.stage == SSL_Referee::NORMAL_FIRST_HALF_PRE || vars.stage == SSL_Referee::NORMAL_SECOND_HALF_PRE
             || vars.stage == SSL_Referee::EXTRA_FIRST_HALF || vars.stage == SSL_Referee::EXTRA_SECOND_HALF) {
           vars.stage = NextStage(vars.stage);
-          vars.stage_end = w.time + TimeInHalf;
+          vars.stage_end = w.time + C::TimeInHalf;
 
           // determine which team is on each side
           vars.blue_side = GuessBlueSide(w);
         }
 
         vars.state = REF_WAIT_KICK;
-        vars.kick_deadline = w.time + KickDeadline;
+        vars.kick_deadline = w.time + C::KickDeadline;
         break;
 
       case SSL_Referee::FORCE_START:
@@ -745,7 +748,7 @@ RobotID KickTakenEvent::checkDefenseAreaDistanceInfraction(const World &w) const
       continue;
     }
 
-    if (DistToDefenseArea(robot.loc, positive_x) < MaxRobotRadius + 200) {
+    if (DistToDefenseArea(robot.loc, positive_x) < C::MaxRobotRadius + 200) {
       return robot.robot_id;
     }
   }
@@ -803,13 +806,13 @@ void GoalScoredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
       linvel(ball_history, p0, v0);
 
       frames = min(lost_cnt, MAX_EXTRAPOLATE_FRAMES);
-      ball_loc = p0 + v0 * (frames + ball_history.size() - 1) * FramePeriod;
+      ball_loc = p0 + v0 * (frames + ball_history.size() - 1) * C::FramePeriod;
 
       vector2f b(ball_loc.x, fabs(ball_loc.y));
       vector2f h(ball_history[0].v.x, fabs(ball_history[0].v.y));
       // check if the hallucinated trajectory crosses a goal wall
       if (segment_intersects(
-            b, h, vector2f(FieldLengthH, GoalWidthH), vector2f(FieldLengthH + GoalDepth, GoalWidthH))) {
+            b, h, vector2f(C::FieldLengthH, C::GoalWidthH), vector2f(C::FieldLengthH + C::GoalDepth, C::GoalWidthH))) {
         return;
       }
     }
@@ -818,8 +821,8 @@ void GoalScoredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     ball_loc = w.ball.loc;
   }
 
-  fired = ((fabs(ball_loc.y) < GoalWidthH) && (fabs(ball_loc.x) > FieldLengthH)
-           && (fabs(ball_loc.x) < FieldLengthH + GoalDepth));
+  fired = ((fabs(ball_loc.y) < Constants::GoalWidthH) && (fabs(ball_loc.x) > C::FieldLengthH)
+           && (fabs(ball_loc.x) < C::FieldLengthH + Constants::GoalDepth));
 
   if (fired) {
     int x_sign = sign(ball_loc.x);
@@ -836,8 +839,14 @@ void GoalScoredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
     DrawingFrameWrapper drawing(w.time, w.time + .5);
     drawing.circle("goal scored", 0, scoring_team == TeamBlue ? 0x0000ff : 0xffff00, V2COMP(ball_loc), 80);
-    drawing.rectangle(
-      "goal scored", 0, 0x00ff00, x_sign * (FieldLengthH + GoalDepth / 2), 0, GoalWidthH * 2 + 500, GoalDepth + 500, 0);
+    drawing.rectangle("goal scored",
+                      0,
+                      0x00ff00,
+                      x_sign * (C::FieldLengthH + Constants::GoalDepth / 2),
+                      0,
+                      Constants::GoalWidthH * 2 + 500,
+                      Constants::GoalDepth + 500,
+                      0);
     drawings.push_back(drawing.drawing);
 
     autoref_msg_valid = true;
@@ -886,9 +895,9 @@ void LongDribbleEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     vector2f ball_local = (ball.loc - r.loc).rotate(-r.angle);
     DribbleRecord &d = dribble[r.robot_id.team][r.robot_id.id];
 
-    double InX = DribblerOffset;
+    double InX = C::DribblerOffset;
 
-    double NearX = DribblerOffset + BallRadius + 5;
+    double NearX = C::DribblerOffset + C::BallRadius + 5;
     double NearY = 50;
 
     double MidX = 120;
@@ -938,7 +947,7 @@ void StageTimeEndedEvent::_process(const World &w, bool ball_z_valid, float ball
   switch (vars.stage) {
     case SSL_Referee::NORMAL_FIRST_HALF:
       vars.cmd = SSL_Referee::HALT;
-      vars.stage_end = w.time + TimeInHalftime;
+      vars.stage_end = w.time + C::TimeInHalftime;
       vars.state = REF_BREAK;
       break;
 
@@ -984,8 +993,8 @@ void TooManyRobotsEvent::_process(const World &w, bool ball_z_valid, float ball_
   }
 
   const SSL_Referee &msg = ref->getRefboxMessage();
-  int max_blue = MaxTeamRobots - msg.blue().yellow_card_times_size() - msg.blue().red_cards();
-  int max_yellow = MaxTeamRobots - msg.yellow().yellow_card_times_size() - msg.yellow().red_cards();
+  int max_blue = Constants::MaxTeamRobots - msg.blue().yellow_card_times_size() - msg.blue().red_cards();
+  int max_yellow = Constants::MaxTeamRobots - msg.yellow().yellow_card_times_size() - msg.yellow().red_cards();
 
   int n_blue = 0, n_yellow = 0;
   for (const auto &robot : w.robots) {
@@ -1058,7 +1067,7 @@ void RobotSpeedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     }
 
     for (int team = 0; team < NumTeams; team++) {
-      if (violation_frames[team] > 4 * FrameRate) {
+      if (violation_frames[team] > 4 * Constants::FrameRate) {
         fired = true;
         violation_frames[team] = 0;
 
@@ -1080,7 +1089,7 @@ void StopDistanceEvent::_process(const World &w, bool ball_z_valid, float ball_z
     return;
   }
 
-  float dist = GameOffRobotDistanceLimit + MaxRobotRadius;
+  float dist = GameOffRobotDistanceLimit + C::MaxRobotRadius;
 
   for (const auto &robot : w.robots) {
     if ((robot.loc - w.ball.loc).length() < dist) {
@@ -1089,7 +1098,7 @@ void StopDistanceEvent::_process(const World &w, bool ball_z_valid, float ball_z
   }
 
   for (int team = 0; team < NumTeams; team++) {
-    if (violation_frames[team] > 10 * FrameRate) {
+    if (violation_frames[team] > 10 * Constants::FrameRate) {
       fired = true;
       violation_frames[team] = 0;
 

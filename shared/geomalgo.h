@@ -592,11 +592,15 @@ vector LineMidpointAngular(const vector &p0, const vector &p1, real &dist)
 template <class vector>
 double DistToDefenseArea(const vector &loc, bool positive_x)
 {
-  vector p(loc.x * (positive_x ? 1 : -1), std::abs(loc.y));
+  auto x = loc.x * (positive_x ? 1 : -1), y = std::abs(loc.y);
 
-  if (p.y < DefenseStretchH) {
-    return std::abs(p.x - FieldLengthH) - DefenseRadius;
+  if (y < Constants::DefenseWidthH) {
+    return std::abs(x - Constants::FieldLengthH + Constants::DefenseLength);
   }
 
-  return std::hypot(p.x - FieldLengthH, p.y - DefenseStretchH) - DefenseRadius;
+  if (x > Constants::FieldLengthH - Constants::DefenseLength) {
+    return y - Constants::DefenseWidthH;
+  }
+
+  return std::hypot(x - Constants::FieldLengthH + Constants::DefenseLength, y - Constants::DefenseWidthH);
 }

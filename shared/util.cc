@@ -153,97 +153,90 @@ vector2f OutOfBoundsLoc(const vector2f &objectLoc, const vector2f &objectDir)
     return objectLoc;
   }
   if (objectDir.x == 0) {
-    return (signy == 1) ? vector2f(objectLoc.x, FieldWidthH) : vector2f(objectLoc.x, -FieldWidthH);
+    return (signy == 1) ? vector2f(objectLoc.x, Constants::FieldWidthH)
+                        : vector2f(objectLoc.x, -Constants::FieldWidthH);
   }
   if (objectDir.y == 0) {
-    return (signx == 1) ? vector2f(FieldLengthH, objectLoc.y) : vector2f(-FieldLengthH, objectLoc.y);
+    return (signx == 1) ? vector2f(Constants::FieldLengthH, objectLoc.y)
+                        : vector2f(-Constants::FieldLengthH, objectLoc.y);
   }
 
   vector2f dir = objectDir.norm();
   double xtime, ytime;
   if ((signx == 1) && (signy == 1)) {
-    double theirSideDist = FieldLengthH - objectLoc.x;
-    double leftSideDist = FieldWidthH - objectLoc.y;
+    double theirSideDist = Constants::FieldLengthH - objectLoc.x;
+    double leftSideDist = Constants::FieldWidthH - objectLoc.y;
     xtime = theirSideDist / dir.x;
     ytime = leftSideDist / dir.y;
-    return (xtime < ytime) ? vector2f(FieldLengthH, objectLoc.y + xtime * dir.y)
-                           : vector2f(objectLoc.x + ytime * dir.x, FieldWidthH);
+    return (xtime < ytime) ? vector2f(Constants::FieldLengthH, objectLoc.y + xtime * dir.y)
+                           : vector2f(objectLoc.x + ytime * dir.x, Constants::FieldWidthH);
   }
   if ((signx == 1) && (signy == -1)) {
-    double theirSideDist = FieldLengthH - objectLoc.x;
-    double rightSideDist = fabs(-FieldWidthH - objectLoc.y);
+    double theirSideDist = Constants::FieldLengthH - objectLoc.x;
+    double rightSideDist = fabs(-Constants::FieldWidthH - objectLoc.y);
     xtime = fabs(theirSideDist / dir.x);
     ytime = fabs(rightSideDist / dir.y);
-    return (xtime < ytime) ? vector2f(FieldLengthH, objectLoc.y + xtime * dir.y)
-                           : vector2f(objectLoc.x + ytime * dir.x, -FieldWidthH);
+    return (xtime < ytime) ? vector2f(Constants::FieldLengthH, objectLoc.y + xtime * dir.y)
+                           : vector2f(objectLoc.x + ytime * dir.x, -Constants::FieldWidthH);
   }
   if ((signx == -1) && (signy == 1)) {
-    double ourSideDist = fabs(-FieldLengthH - objectLoc.x);
-    double rightSideDist = FieldWidthH - objectLoc.y;
+    double ourSideDist = fabs(-Constants::FieldLengthH - objectLoc.x);
+    double rightSideDist = Constants::FieldWidthH - objectLoc.y;
     xtime = fabs(ourSideDist / dir.x);
     ytime = fabs(rightSideDist / dir.y);
-    return (xtime < ytime) ? vector2f(-FieldLengthH, objectLoc.y + xtime * dir.y)
-                           : vector2f(objectLoc.x + ytime * dir.x, FieldWidthH);
+    return (xtime < ytime) ? vector2f(-Constants::FieldLengthH, objectLoc.y + xtime * dir.y)
+                           : vector2f(objectLoc.x + ytime * dir.x, Constants::FieldWidthH);
   }
-  double ourSideDist = fabs(-FieldLengthH - objectLoc.x);
-  double leftSideDist = fabs(-FieldWidthH - objectLoc.y);
+  double ourSideDist = fabs(-Constants::FieldLengthH - objectLoc.x);
+  double leftSideDist = fabs(-Constants::FieldWidthH - objectLoc.y);
   xtime = fabs(ourSideDist / dir.x);
   ytime = fabs(leftSideDist / dir.y);
-  return (xtime < ytime) ? vector2f(-FieldLengthH, objectLoc.y + xtime * dir.y)
-                         : vector2f(objectLoc.x + ytime * dir.x, -FieldWidthH);
+  return (xtime < ytime) ? vector2f(-Constants::FieldLengthH, objectLoc.y + xtime * dir.y)
+                         : vector2f(objectLoc.x + ytime * dir.x, -Constants::FieldWidthH);
 }
 
 vector2f ClosestDefenseAreaP(const vector2f &loc, bool positive_x, double dist)
 {
-  // Check if the location is outside the goal line.
-  if (!positive_x && loc.x < -FieldLengthH) {
-    return vector2f(-FieldLengthH - dist, loc.y);
+  auto sgn = positive_x ? 1 : -1;
+  auto x = sgn * loc.x, y = std::abs(loc.y);
+
+  vector2f ret = loc;
+
+  if (x > Constants::FieldLengthH - Constants::DefenseLength
+      && x + y > Constants::FieldLengthH - Constants::DefenseLength + Constants::DefenseWidthH) {
+    ret.set(x, Constants::DefenseWidthH + dist);
   }
-  if (!positive_x && loc.x > FieldLengthH) {
-    return vector2f(FieldLengthH + dist, loc.y);
+  else if (y < Constants::DefenseWidthH
+           && x + y <= Constants::FieldLengthH - Constants::DefenseLength + Constants::DefenseWidthH) {
+    ret.set(Constants::FieldLengthH - Constants::DefenseLength - dist, y);
+  }
+  else {
+    vector2f corner(Constants::FieldLengthH - Constants::DefenseLength, Constants::DefenseWidthH);
+    ret.set(corner + (loc - corner).norm(dist));
   }
 
-  const float goal_x = positive_x ? FieldLengthH : -FieldLengthH;
-  const float dy = fabs(loc.y) - static_cast<float>(DefenseStretchH);
-  if (dy > 0) {
-    // On the circular part
-    vector2f defenseCircCent(goal_x, DefenseStretchH * sign(loc.y));
-    vector2f circLocV = (defenseCircCent - loc);
-    vector2f locDir = circLocV.norm(DefenseRadius + dist);
-    return vector2f(defenseCircCent - locDir);
+  if (loc.y < 0) {
+    ret.y *= -1;
   }
-
-  // Measure x-distance
-  return vector2f(goal_x - sign(goal_x) * (DefenseRadius + dist), loc.y);
+  return ret * sgn;
 }
 
 bool IsInField(vector2f loc, float margin, bool avoid_defense)
 {
+  auto x = std::abs(loc.x), y = std::abs(loc.y);
+
   // check outside field boundaries
-  if (fabs(loc.x) > FieldLengthH - margin) {
+  if (x > Constants::FieldLengthH - margin) {
     return false;
   }
-  if (fabs(loc.y) > FieldWidthH - margin) {
+  if (y > Constants::FieldWidthH - margin) {
     return false;
   }
 
   // check defense area
   if (avoid_defense) {
-    // static const vector2f cen(-FieldLengthH,0);
-    // if(sqdist(loc,cen) < sq(DefenseRadius + margin)) return(false);
-
-    float x = loc.x, y = fabs(loc.y);
-    vector2f p1(-FieldLengthH, DefenseStretchH), loc2 = loc;
-    loc2.y = fabs(loc2.y);
-    if (y > DefenseStretchH) {
-      if (dist(p1, loc2) < DefenseRadius + margin) {
-        return false;
-      }
-    }
-    else {
-      if (fabs(p1.x - x) < DefenseRadius + margin) {
-        return false;
-      }
+    if (x > Constants::FieldLengthH - Constants::DefenseLength - margin && y < Constants::DefenseWidthH + margin) {
+      return false;
     }
   }
 
@@ -252,25 +245,11 @@ bool IsInField(vector2f loc, float margin, bool avoid_defense)
 
 vector2f BoundToField(vector2f loc, float margin, bool avoid_defense)
 {
-  loc.x = abs_bound(loc.x, FieldLengthH - margin);
-  loc.y = abs_bound(loc.y, FieldWidthH - margin);
+  loc.x = abs_bound(loc.x, Constants::FieldLengthH - margin);
+  loc.y = abs_bound(loc.y, Constants::FieldWidthH - margin);
 
   if (avoid_defense) {
-    const float clearance = DefenseRadius + margin;
-    if (fabs(loc.y) > DefenseStretchH) {
-      const vector2f goalQCircleCen_AbsY(-FieldLengthH, DefenseStretchH);
-      const vector2f loc_AbsY(loc.x, fabs(loc.y));
-      const float distToDefense = (goalQCircleCen_AbsY - loc_AbsY).length();
-      if (distToDefense < clearance) {
-        const vector2f goalQCircleCen = vector2f(-FieldLengthH, sign(loc.y) * DefenseStretchH);
-        loc = goalQCircleCen + (loc - goalQCircleCen) * clearance / distToDefense;
-      }
-    }
-    else {
-      if (fabs(-FieldLengthH - loc.x) < clearance) {
-        loc.x = -FieldLengthH + clearance;
-      }
-    }
+    // TODO
   }
   return loc;
 }
@@ -299,11 +278,11 @@ int8_t GuessBlueSide(const World &w)
   double blue_right_weight = 0;
   for (const auto &r : w.robots) {
     if (r.visible()) {
-      if (DistToDefenseArea(r.loc, true) < -MaxRobotRadius) {
-        blue_right_weight += 5 * FieldLengthH * ((r.robot_id.team == TeamBlue) ? 1 : -1);
+      if (DistToDefenseArea(r.loc, true) < -Constants::MaxRobotRadius) {
+        blue_right_weight += 5 * Constants::FieldLengthH * ((r.robot_id.team == TeamBlue) ? 1 : -1);
       }
-      else if (DistToDefenseArea(r.loc, false) < -MaxRobotRadius) {
-        blue_right_weight += -5 * FieldLengthH * ((r.robot_id.team == TeamBlue) ? 1 : -1);
+      else if (DistToDefenseArea(r.loc, false) < -Constants::MaxRobotRadius) {
+        blue_right_weight += -5 * Constants::FieldLengthH * ((r.robot_id.team == TeamBlue) ? 1 : -1);
       }
       else {
         blue_right_weight += r.loc.x * ((r.robot_id.team == TeamBlue) ? 1 : -1);

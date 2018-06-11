@@ -14,7 +14,7 @@ bool AccelProcessor::proc(const World &w, CollideResult &res)
   }
 
   vector2f delta = history[-1].ball.loc - (history[0].ball.loc + history[-2].ball.loc) / 2;
-  double accel = delta.length() * FrameRate * FrameRate;
+  double accel = delta.length() * Constants::FrameRate * Constants::FrameRate;
 
   if (accel < 2000) {
     return false;
@@ -30,7 +30,7 @@ bool AccelProcessor::proc(const World &w, CollideResult &res)
     }
   }
 
-  bool near = closest_dist < MaxRobotRadius + BallRadius + 10;
+  bool near = closest_dist < Constants::MaxRobotRadius + Constants::BallRadius + 10;
   if (!near) {
     return false;
   }
@@ -84,10 +84,11 @@ bool LineCheckProcessor::proc(const World &w, CollideResult &res)
 
   // make sure robot comes near ball at some point (TODO use interframe locations)
   bool near = false;
-  near = (closest_dist < MaxRobotRadius + BallRadius + 3);
+  near = (closest_dist < Constants::MaxRobotRadius + Constants::BallRadius + 3);
   // TODO fix this
   // for (int i = -5; i <= 0; i++) {
-  //   if (dist(history[i].robots[closest_ind].loc, history[i].ball.loc) < MaxRobotRadius + BallRadius + 30) {
+  //   if (dist(history[i].robots[closest_ind].loc, history[i].ball.loc) < Constants::MaxRobotRadius +
+  //   Constants::BallRadius + 30) {
   //     near = true;
   //     break;
   //   }
@@ -132,7 +133,7 @@ bool RobotDistProcessor::proc(const World &w, CollideResult &res)
     // for(int i = -5; i <= 0; i++)
     //   fprintf(stderr, "%f %.0f,%.0f\n", hist[i].t, V2COMP(hist[i].v));
 
-    if (t - hist[-5].t > 15 * FramePeriod) {
+    if (t - hist[-5].t > 15 * Constants::FramePeriod) {
       continue;
     }
 
@@ -154,10 +155,10 @@ bool RobotDistProcessor::proc(const World &w, CollideResult &res)
       continue;
     }
 
-    if (inter.length() < MaxRobotRadius + BallRadius + 30 && inter.length() < hist[-5].v.length()
+    if (inter.length() < Constants::MaxRobotRadius + Constants::BallRadius + 30 && inter.length() < hist[-5].v.length()
         && inter.length() < hist[0].v.length()) {
       res.robot_id = r.robot_id;
-      res.time = t - 2 * FramePeriod;
+      res.time = t - 2 * Constants::FramePeriod;
       found = true;
     }
   }
@@ -200,7 +201,7 @@ bool BackTrackProcessor::proc(const World &w, CollideResult &res)
     }
 
     // recent samples are too sparse; give up
-    if (t - (t0 + hist[-HIST_LEN + 1].t) > 3 * HIST_LEN * FramePeriod) {
+    if (t - (t0 + hist[-HIST_LEN + 1].t) > 3 * HIST_LEN * Constants::FramePeriod) {
       continue;
     }
 
@@ -209,7 +210,7 @@ bool BackTrackProcessor::proc(const World &w, CollideResult &res)
     bool through = false;
     for (int i = -HIST_LEN + 1; i < -VEL_SAMPLES + 1; i++) {
       double seg_dist = distance_to_segment(hist[i].v, hist[i + 1].v, vector2f(0, 0));
-      if (seg_dist < MaxRobotRadius - BallRadius) {
+      if (seg_dist < Constants::MaxRobotRadius - Constants::BallRadius) {
         through = true;
         break;
       }
@@ -226,10 +227,10 @@ bool BackTrackProcessor::proc(const World &w, CollideResult &res)
     // printf("%.3f || p %.0f,%.0f || v %.3f,%.3f\n", t, V2COMP(p0), V2COMP(v0));
 
     for (int i = -2; i < 0; i++) {
-      vector2f old_pos(p0 + i * FramePeriod * v0);
-      if (old_pos.length() < MaxRobotRadius + BallRadius - 10) {
+      vector2f old_pos(p0 + i * Constants::FramePeriod * v0);
+      if (old_pos.length() < Constants::MaxRobotRadius + Constants::BallRadius - 10) {
         res.robot_id = r.robot_id;
-        res.time = t - 2 * FramePeriod;
+        res.time = t - 2 * Constants::FramePeriod;
         found = true;
       }
     }
@@ -243,8 +244,8 @@ bool BackTrackProcessor::proc(const World &w, CollideResult &res)
   return false;
 }
 
-// float AccelProcessor::BallNearDist  = MaxRobotRadius + BallRadius + 70.0;
-// float AccelProcessor::BallCloseDist = MaxRobotRadius + BallRadius + 40.0;
+// float AccelProcessor::BallNearDist  = Constants::MaxRobotRadius + Constants::BallRadius + 70.0;
+// float AccelProcessor::BallCloseDist = Constants::MaxRobotRadius + Constants::BallRadius + 40.0;
 // float AccelProcessor::BallLooseDist = 500.0;
 // float AccelProcessor::BallTouchAcceleration = 50000.0;
 

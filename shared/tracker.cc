@@ -32,7 +32,7 @@ vector2f Tracker::ObjectTracker::fitVelocity()
 {
   // TODO dedup
   if (history.size() < VEL_SAMPLES
-      || history[0].time - history[history.size() - 1].time > 2 * VEL_SAMPLES * FramePeriod) {
+      || history[0].time - history[history.size() - 1].time > 2 * VEL_SAMPLES * Constants::FramePeriod) {
     return vector2f(0, 0);
   }
 
@@ -124,7 +124,7 @@ void Tracker::updateVision(const SSL_DetectionFrame &d)
   if (ball.affinity >= 0) {
     const Observation &last_ball = ball.obs[ball.affinity];
     if (last_ball.last_valid < 30) {
-      max_dist = 10000 * FramePeriod * last_ball.last_valid * 100;
+      max_dist = 10000 * Constants::FramePeriod * last_ball.last_valid * 100;
       last_ball_loc = last_ball.loc;
     }
     if (debug) {

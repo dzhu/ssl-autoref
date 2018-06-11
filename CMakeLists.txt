@@ -10,7 +10,7 @@ endif()
 project (autoref)
 
 #### miscellaneous compile settings
-set (CMAKE_CXX_FLAGS "-std=c++11 -ggdb -Werror")
+set (CMAKE_CXX_FLAGS "-std=c++17 -ggdb -Werror")
 set (EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set (CMAKE_EXPORT_COMPILE_COMMANDS on)
 file (MAKE_DIRECTORY ${EXECUTABLE_OUTPUT_PATH})
@@ -26,6 +26,7 @@ include_directories (${PROTO_OUT_PATH})
 
 set (PROTO_FILES
   drawing
+  game_event
   messages_robocup_ssl_detection
   messages_robocup_ssl_geometry
   messages_robocup_ssl_wrapper
@@ -70,6 +71,7 @@ add_executable (autoref
   eval_ref.cc
   events.cc
   rconclient.cc
+  shared/constants.cc
   shared/tracker.cc
   shared/udp.cc
   shared/util.cc

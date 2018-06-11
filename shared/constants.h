@@ -3,11 +3,44 @@
 #include <math.h>
 #include <stdint.h>
 
-static const double TimeInHalf = 600;
-static const double TimeInHalftime = 300;
-static const double KickDeadline = 10;
+#include "messages_robocup_ssl_geometry.pb.h"
 
-static const int MaxCameras = 4;
+class Constants
+{
+public:
+  // time-related values
+  static double TimeInHalf;
+  static double TimeInHalftime;
+  static double KickDeadline;
+
+  static double FrameRate;
+  static double FramePeriod;
+  static unsigned int FrameRateInt;
+
+  // distance-related values (common)
+  static float MaxRobotRadius;
+  static float BallRadius;
+  static int DribblerOffset;
+
+  // misc
+  static float MaxKickSpeed;
+  static int MaxTeamRobots;
+  static int MaxRobots;
+
+  // field geometry (by division)
+  static float FieldLengthH;
+  static float FieldWidthH;
+  static float DefenseLength;
+  static float DefenseWidthH;
+  static float GoalDepth;
+  static float GoalWidthH;
+
+  // init functions
+  static void initCommon();
+  static void initDivisionA();
+  static void initDivisionB();
+  static void updateGeometry(SSL_GeometryData &g);
+};
 
 enum Team : int
 {
@@ -17,27 +50,8 @@ enum Team : int
 };
 static const int NumTeams = static_cast<int>(TeamNone);
 
-static const int MaxTeamRobots = 6;
-static const int MaxRobots = NumTeams * MaxTeamRobots;
 static const int MaxRobotIds = 16;
-
-static const float MaxRobotRadius = 90;
-static const float BallRadius = 21;
-static const int DribblerOffset = 79;
-
-static const double FrameRate = 61.51;
-static const double FramePeriod = 1.0 / FrameRate;
-static const unsigned int FrameRateInt = rint(FrameRate + 0.5);
-
-static const float GoalDepth = 180;
-static const float GoalWidthH = 500;
-static const float FieldLengthH = 4500;
-static const float FieldWidthH = 3000;
-
-static const float DefenseStretchH = 250;
-static const float DefenseRadius = 1000;
-
-static const float MaxKickSpeed = 8000;
+static const int MaxCameras = 8;
 
 struct RobotID
 {
