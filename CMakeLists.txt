@@ -30,7 +30,6 @@ set (PROTO_FILES
   messages_robocup_ssl_detection
   messages_robocup_ssl_geometry
   messages_robocup_ssl_wrapper
-  ssl_autoref
   ssl_referee
   referee_call
   rcon

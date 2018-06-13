@@ -77,7 +77,7 @@ message SSL_Referee_Game_Event {
     }
 
     // the game event type that happened
-    required GameEventType gameEventType = 1;
+    required GameEventType game_event_type = 1;
 
     // a team
     enum Team {

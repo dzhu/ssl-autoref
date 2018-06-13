@@ -8,9 +8,9 @@
 
 #include <google/protobuf/text_format.h>
 
+#include "game_event.pb.h"
 #include "messages_robocup_ssl_wrapper.pb.h"
 #include "rcon.pb.h"
-#include "ssl_autoref.pb.h"
 #include "ssl_referee.pb.h"
 
 #include "constants.h"
@@ -42,7 +42,7 @@ protected:
 
   AutorefVariables vars;
 
-  ssl::SSL_Autoref message;
+  SSL_Referee_Game_Event game_event;
   bool message_ready;
 
   template <typename E>
@@ -96,13 +96,17 @@ public:
     return refbox_message;
   }
 
+  SSL_Referee_Game_Event &getGameEvent()
+  {
+    return game_event;
+  }
+
   BaseAutoref();
   bool isMessageReady();
   bool isRemoteReady();
 
   SSL_Referee makeMessage();
   SSL_RefereeRemoteControlRequest makeRemote();
-  const ssl::SSL_Autoref &getUpdate();
 
   void updateGeometry(const SSL_GeometryData &g);
   void updateVision(const SSL_DetectionFrame &d);

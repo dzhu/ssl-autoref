@@ -306,7 +306,7 @@ void BallSpeedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
     autoref_msg_valid = true;
     setReplayTimes(vars.touch_time, w.time);
-    setFoulMessage(ssl::SSL_Autoref::RuleInfringement::BALL_SPEED, vars.toucher);
+    setEventRobot(SSL_Referee_Game_Event::BALL_SPEED, vars.toucher);
     setDesignatedPoint(legalPosition(vars.touch_loc));
   }
 }
@@ -351,7 +351,7 @@ void BallStuckEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
       autoref_msg_valid = true;
       setReplayTimes(w.time - 3, w.time);
-      autoref_msg.set_lack_of_progress(true);
+      setEventType(SSL_Referee_Game_Event::NO_PROGRESS_IN_GAME);
     }
   }
 }
@@ -442,7 +442,7 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
       autoref_msg_valid = true;
       setReplayTimes(vars.touch_time, w.time);
-      setFoulMessage(ssl::SSL_Autoref::RuleInfringement::CARPETING, vars.toucher);
+      setEventRobot(SSL_Referee_Game_Event::ICING, vars.toucher);
       setDesignatedPoint(legalPosition(vars.touch_loc));
     }
     // if not icing, then throw-in, corner kick, or goal kick
@@ -468,12 +468,7 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
       autoref_msg_valid = true;
       setReplayTimes(vars.touch_time, w.time);
-      auto ball_out = autoref_msg.mutable_ball_out_of_field();
-      ball_out->set_last_touch(vars.toucher.team == TeamBlue ? ssl::SSL_Autoref_Team_BLUE
-                                                             : ssl::SSL_Autoref_Team_YELLOW);
-      auto out_pos = ball_out->mutable_position();
-      out_pos->set_x(out_loc.x);
-      out_pos->set_y(out_loc.y);
+      setEventRobot(SSL_Referee_Game_Event::BALL_LEFT_FIELD, vars.toucher);
     }
   }
 
@@ -536,7 +531,7 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
           autoref_msg_valid = true;
           setReplayTimes(vars.touch_time - 1, w.time);
-          setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DEFENDER_DEFENSE_AREA_FULL, vars.toucher);
+          setEventRobot(SSL_Referee_Game_Event::MULTIPLE_DEFENDER, vars.toucher);
           setDesignatedPoint(legalPosition(vars.touch_loc));
 
           {
@@ -564,7 +559,7 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
           autoref_msg_valid = true;
           setReplayTimes(vars.touch_time - 1, w.time);
-          setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DEFENDER_DEFENSE_AREA_PARTIAL, vars.toucher);
+          setEventRobot(SSL_Referee_Game_Event::MULTIPLE_DEFENDER_PARTIALLY, vars.toucher);
           setDesignatedPoint(legalPosition(vars.touch_loc));
 
           {
@@ -585,7 +580,7 @@ void BallTouchedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
         autoref_msg_valid = true;
         setReplayTimes(vars.touch_time - 1, w.time);
-        setFoulMessage(ssl::SSL_Autoref::RuleInfringement::ATTACKER_DEFENSE_AREA, vars.toucher);
+        setEventRobot(SSL_Referee_Game_Event::ATTACKER_IN_DEFENSE_AREA, vars.toucher);
         setDesignatedPoint(legalPosition(vars.touch_loc));
 
         {
@@ -710,7 +705,7 @@ void KickTakenEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
       autoref_msg_valid = true;
       setReplayTimes(w.time - 2, w.time);
-      setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DEFENSE_AREA_DISTANCE, offender);
+      setEventRobot(SSL_Referee_Game_Event::ATTACKER_TO_DEFENCE_AREA, offender);
       WorldRobot off;
       for (const auto &r : w.robots) {
         if (r.robot_id == offender) {
@@ -763,7 +758,7 @@ void KickExpiredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     setDescription("Team took too long to take a kick");
 
     autoref_msg_valid = true;
-    autoref_msg.set_lack_of_progress(true);
+    setEventType(SSL_Referee_Game_Event::KICK_TIMEOUT);
     setReplayTimes(w.time - 3, w.time);
   }
 }
@@ -845,8 +840,7 @@ void GoalScoredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     drawings.push_back(drawing.drawing);
 
     autoref_msg_valid = true;
-    auto goal = autoref_msg.mutable_goal();
-    goal->set_scoring_team(scoring_team == TeamBlue ? ssl::SSL_Autoref::BLUE : ssl::SSL_Autoref::YELLOW);
+    setEventTeam(SSL_Referee_Game_Event::GOAL, scoring_team);
     setReplayTimes(vars.touch_time, w.time);
   }
 }
@@ -916,7 +910,7 @@ void LongDribbleEvent::_process(const World &w, bool ball_z_valid, float ball_z)
         autoref_msg_valid = true;
         // TODO compute start time
         setReplayTimes(w.time - 3, w.time);
-        setFoulMessage(ssl::SSL_Autoref::RuleInfringement::DRIBBLING, r.robot_id);
+        setEventRobot(SSL_Referee_Game_Event::BALL_DRIBBLING, r.robot_id);
         setDesignatedPoint(legalPosition(d.start_loc));
       }
     }
@@ -1038,7 +1032,7 @@ void TooManyRobotsEvent::_process(const World &w, bool ball_z_valid, float ball_
 
     autoref_msg_valid = true;
     setReplayTimes(w.time - 3, w.time);
-    setFoulMessage(ssl::SSL_Autoref::RuleInfringement::NUMBER_OF_PLAYERS, offending_team);
+    setEventTeam(SSL_Referee_Game_Event::NUMBER_OF_PLAYERS, offending_team);
   }
 }
 
@@ -1070,7 +1064,7 @@ void RobotSpeedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
         autoref_msg_valid = true;
         setReplayTimes(w.time - 3, w.time);
-        setFoulMessage(ssl::SSL_Autoref::RuleInfringement::STOP_SPEED, static_cast<Team>(team));
+        setEventTeam(SSL_Referee_Game_Event::ROBOT_STOP_SPEED, static_cast<Team>(team));
       }
     }
   }
@@ -1101,7 +1095,7 @@ void StopDistanceEvent::_process(const World &w, bool ball_z_valid, float ball_z
 
       autoref_msg_valid = true;
       setReplayTimes(w.time - 3, w.time);
-      setFoulMessage(ssl::SSL_Autoref::RuleInfringement::STOP_BALL_DISTANCE, static_cast<Team>(team));
+      // TODO no Game_Event type for ball distance?
 
       {
         DrawingFrameWrapper drawing(w.time, w.time + .5);

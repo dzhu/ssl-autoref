@@ -93,6 +93,8 @@ SSL_RefereeRemoteControlRequest BaseAutoref::makeRemote()
   msg.set_last_command_counter(refbox_message.command_counter());
   msg.set_implementation_id("cmdragons-autoref");
 
+  msg.mutable_gameevent()->CopyFrom(game_event);
+
   if (new_cmd) {
     msg.set_command(vars.cmd);
   }
@@ -100,9 +102,4 @@ SSL_RefereeRemoteControlRequest BaseAutoref::makeRemote()
     msg.set_stage(vars.stage);
   }
   return msg;
-}
-
-const ssl::SSL_Autoref &BaseAutoref::getUpdate()
-{
-  return message;
 }

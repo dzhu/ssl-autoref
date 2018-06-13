@@ -44,9 +44,10 @@ bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z
   SSL_Referee::Stage last_stage = vars.stage;
   SSL_Referee::Command last_command = vars.cmd;
 
-  message.Clear();
   message_ready = false;
   state_updated = false;
+
+  game_event.Clear();
 
   // printf("-- state: %s\n", ref_state_names[vars.state]);
   for (auto it = events.begin(); it < events.end(); ++it) {
@@ -59,15 +60,15 @@ bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z
       AutorefVariables new_vars = ev->getUpdate();
 
       auto drawings = ev->getDrawings();
-      for (auto d : drawings) {
-        printf("drawing: %.3f -> %.3f  %d %d %d\n",
-               d.timestamp(),
-               d.end_timestamp(),
-               d.line_size(),
-               d.circle_size(),
-               d.rectangle_size());
-        logMessage(d, *log);
-      }
+      // for (auto d : drawings) {
+      //   printf("drawing: %.3f -> %.3f  %d %d %d\n",
+      //          d.timestamp(),
+      //          d.end_timestamp(),
+      //          d.line_size(),
+      //          d.circle_size(),
+      //          d.rectangle_size());
+      //   logMessage(d, *log);
+      // }
 
       const SSL_Referee &ref = getRefboxMessage();
 
@@ -80,15 +81,8 @@ bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z
       tm *st = localtime(&tt);
       strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", st);
 
-      if (ev->getMessage(message)) {
+      if (ev->getMessage(game_event)) {
         message_ready = true;
-
-        message.set_blue_side(vars.blue_side);
-        message.set_command_timestamp(GetTimeMicros());
-
-        auto timestamp = message.mutable_game_timestamp();
-        timestamp->set_game_stage(refbox_message.stage());
-        timestamp->set_stage_time_left(refbox_message.stage_time_left());
       }
 
       // if (ev->getDescription().size() > 0) {
@@ -158,8 +152,6 @@ bool EvaluationAutoref::doEvents(const World &w, bool ball_z_valid, float ball_z
       vars.reset = false;
     }
   }
-
-  message.set_autoref_name("CMDragons autoref");
 
   new_stage = (vars.stage != last_stage);
   new_cmd = (vars.cmd != last_command) && (vars.cmd != refbox_message.command());

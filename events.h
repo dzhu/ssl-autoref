@@ -14,7 +14,7 @@
 #include "world.h"
 
 #include "drawing.pb.h"
-#include "ssl_autoref.pb.h"
+#include "game_event.pb.h"
 #include "ssl_referee.pb.h"
 
 using namespace std;
@@ -87,7 +87,7 @@ protected:
   bool fired, fired_last;
   AutorefVariables vars;
   string description;
-  ssl::SSL_Autoref autoref_msg;
+  SSL_Referee_Game_Event game_event;
   bool autoref_msg_valid;
   std::vector<DrawingFrame> drawings;
 
@@ -110,40 +110,33 @@ protected:
 
   void setReplayTimes(double t0, double t1)
   {
-    auto replay = autoref_msg.mutable_replay();
-
-    if (t0 < t1 - 5) {
-      printf("Replay from %f to %f too long...", t0, t1);
-      t0 = t1 - 5;
-    }
-
-    replay->set_start_timestamp(1e6 * t0);
-    replay->set_end_timestamp(1e6 * t1);
+    // TODO (old format with replays was removed)
   }
 
-  void setFoulMessage(ssl::SSL_Autoref::RuleInfringement::FoulType type, Team offending_team)
+  void setEventType(SSL_Referee_Game_Event::GameEventType type)
   {
-    auto foul = autoref_msg.mutable_foul();
-    foul->set_foul_type(type);
-    foul->set_offending_team(offending_team == TeamBlue ? ssl::SSL_Autoref::BLUE : ssl::SSL_Autoref::YELLOW);
+    game_event.set_game_event_type(type);
   }
 
-  void addFoulOffender(int id)
+  void setEventTeam(SSL_Referee_Game_Event::GameEventType type, Team offending_team)
   {
-    auto foul = autoref_msg.mutable_foul();
-    foul->add_offending_robots(id);
+    setEventType(type);
+    auto orig = game_event.mutable_originator();
+    orig->set_team(offending_team == TeamBlue ? SSL_Referee_Game_Event::TEAM_BLUE
+                                              : SSL_Referee_Game_Event::TEAM_YELLOW);
   }
 
-  void setFoulMessage(ssl::SSL_Autoref::RuleInfringement::FoulType type, RobotID offending_robot)
+  void setEventRobot(SSL_Referee_Game_Event::GameEventType type, RobotID offending_robot)
   {
-    setFoulMessage(type, offending_robot.team);
-    addFoulOffender(offending_robot.id);
+    setEventTeam(type, offending_robot.team);
+    auto orig = game_event.mutable_originator();
+    orig->set_botid(offending_robot.id);
   }
 
   void setDesignatedPoint(vector2f designated_point)
   {
-    autoref_msg.mutable_foul()->mutable_designated_point()->set_x(designated_point.x);
-    autoref_msg.mutable_foul()->mutable_designated_point()->set_y(designated_point.y);
+    // autoref_msg.mutable_foul()->mutable_designated_point()->set_x(designated_point.x);
+    // autoref_msg.mutable_foul()->mutable_designated_point()->set_y(designated_point.y);
   }
 
 public:
@@ -162,7 +155,7 @@ public:
     }
 
     vars = refVars();
-    autoref_msg.Clear();
+    game_event.Clear();
     autoref_msg_valid = false;
     drawings.clear();
     _process(w, ball_z_valid, ball_z);
@@ -193,15 +186,15 @@ public:
     return description;
   }
 
-  bool getMessage(ssl::SSL_Autoref &msg) const
+  bool getMessage(SSL_Referee_Game_Event &msg) const
   {
     if (autoref_msg_valid) {
-      msg = autoref_msg;
+      msg = game_event;
     }
     return autoref_msg_valid;
   }
 
-  AutorefEvent(BaseAutoref *_ref) : ref(_ref), fired(false), fired_last(false), enabled(true)
+  AutorefEvent(BaseAutoref *_ref) : enabled(true), ref(_ref), fired(false), fired_last(false)
   {
   }
 };

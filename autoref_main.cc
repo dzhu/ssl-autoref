@@ -59,12 +59,6 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
-  UDP autoref_net;
-  if (!autoref_net.open("", 0, false)) {
-    puts("Autoref port open failed!");
-    exit(1);
-  }
-
   bool use_rcon = args[REMOTE] != nullptr;
   RemoteClient rcon;
   bool rcon_opened = false;
@@ -125,19 +119,6 @@ int main(int argc, char *argv[])
           if (rcon_opened) {
             rcon.sendRequest(autoref->makeRemote());
           }
-        }
-        if (autoref->isMessageReady()) {
-          {
-            const auto &a = autoref->getUpdate();
-            printf("has timestamp: %d\n", a.has_game_timestamp());
-            if (a.has_game_timestamp()) {
-              printf("timestamp has: %d %d\n",
-                     a.game_timestamp().has_game_stage(),
-                     a.game_timestamp().has_stage_time_left());
-            }
-          }
-
-          autoref_net.send(autoref->getUpdate(), autoref_addr);
         }
       }
       if (vision_msg.has_geometry()) {
