@@ -4,7 +4,6 @@ bool AccelProcessor::proc(const World &w, CollideResult &res)
 {
   history.add(w);
 
-  double t = w.time;
   if (w.ball.conf < .1) {
     return false;
   }
@@ -46,7 +45,6 @@ bool LineCheckProcessor::proc(const World &w, CollideResult &res)
   last++;
   history.add(w);
 
-  double t = w.time;
   if (w.ball.conf < .1) {
     return false;
   }

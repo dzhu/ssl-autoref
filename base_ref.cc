@@ -97,6 +97,10 @@ SSL_RefereeRemoteControlRequest BaseAutoref::makeRemote()
 
   if (new_cmd) {
     msg.set_command(vars.cmd);
+    if (vars.cmd == SSL_Referee::BALL_PLACEMENT_BLUE || vars.cmd == SSL_Referee::BALL_PLACEMENT_YELLOW) {
+      msg.mutable_designated_position()->set_x(vars.designated_point.x);
+      msg.mutable_designated_position()->set_y(vars.designated_point.y);
+    }
   }
   else if (new_stage) {
     msg.set_stage(vars.stage);

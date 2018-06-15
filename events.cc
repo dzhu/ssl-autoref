@@ -101,11 +101,9 @@ vector2f legalPosition(vector2f loc)
   }
 
   if (DistToDefenseArea(loc, true) < 700) {
-    puts("t");
     return ClosestDefenseAreaP(loc, true, 700);
   }
   if (DistToDefenseArea(loc, false) < 700) {
-    puts("f");
     return ClosestDefenseAreaP(loc, false, 700);
   }
   return loc;
@@ -284,10 +282,8 @@ void BallSpeedEvent::_process(const World &w, bool ball_z_valid, float ball_z)
   fired = cnt > 3;
 
   if (fired) {
-    vars.cmd = SSL_Referee::STOP;
-    vars.next_cmd = teamCommand(INDIRECT_FREE, vars.toucher.team);
-    vars.reset = true;
-    vars.reset_loc = BoundToField(w.ball.loc, 100, true);
+    vars.cmd = teamCommand(BALL_PLACEMENT, FlipTeam(vars.toucher.team));
+    vars.next_cmd = teamCommand(INDIRECT_FREE, FlipTeam(vars.toucher.team));
     vars.state = REF_WAIT_STOP;
     setDescription("Ball kicked too fast (%.3f m/s) by %s team", speed / 1000, TeamName(vars.toucher.team));
 
@@ -426,8 +422,8 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
     vars.reset = true;
     vars.state = REF_WAIT_STOP;
-    vars.cmd = SSL_Referee::STOP;
     vars.kicker.team = FlipTeam(vars.toucher.team);
+    vars.cmd = teamCommand(BALL_PLACEMENT, vars.kicker.team);
 
     vector2f out_loc = OutOfBoundsLoc(last_ball_loc, ball_loc - last_ball_loc);
     bool own_half = (vars.toucher.team == TeamBlue) == (vars.blue_side * out_loc.x > 0);
@@ -437,7 +433,6 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     // check for icing
     if (past_goal_line && crossed_midline && !own_half) {
       vars.next_cmd = teamCommand(INDIRECT_FREE, vars.kicker.team);
-      vars.reset_loc = vars.touch_loc;
       setDescription("Icing by %s", id_str);
 
       autoref_msg_valid = true;
@@ -464,11 +459,11 @@ void BallExitEvent::_process(const World &w, bool ball_z_valid, float ball_z)
         vars.next_cmd = teamCommand(INDIRECT_FREE, vars.kicker.team);
         setDescription("Throw-in %s -- touched by %s", TeamName(FlipTeam(vars.toucher.team)), id_str);
       }
-      vars.reset_loc = pos;
 
       autoref_msg_valid = true;
       setReplayTimes(vars.touch_time, w.time);
       setEventRobot(SSL_Referee_Game_Event::BALL_LEFT_FIELD, vars.toucher);
+      setDesignatedPoint(pos);
     }
   }
 
@@ -697,8 +692,8 @@ void KickTakenEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     printf("infraction: %d %d\n", offender.team, offender.id);
     if (offender.isValid()) {
       vars.state = REF_WAIT_STOP;
-      vars.cmd = SSL_Referee::STOP;
       vars.kicker.team = FlipTeam(vars.kicker.team);
+      vars.cmd = teamCommand(BALL_PLACEMENT, vars.kicker.team);
       vars.next_cmd = teamCommand(INDIRECT_FREE, vars.kicker.team);
 
       setDescription("Too close to defense area at kick (%s %X)", TeamName(offender.team), offender.id);
@@ -823,8 +818,6 @@ void GoalScoredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     vars.next_cmd = teamCommand(GOAL, scoring_team);
     vars.kicker.team = FlipTeam(scoring_team);
     vars.state = REF_DELAY_GOAL;
-    vars.reset = true;
-    vars.reset_loc.set(0, 0);
     setDescription("Goal scored by %s team", TeamName(scoring_team));
 
     DrawingFrameWrapper drawing(w.time, w.time + .5);
@@ -842,6 +835,7 @@ void GoalScoredEvent::_process(const World &w, bool ball_z_valid, float ball_z)
     autoref_msg_valid = true;
     setEventTeam(SSL_Referee_Game_Event::GOAL, scoring_team);
     setReplayTimes(vars.touch_time, w.time);
+    setDesignatedPoint(vector2f(0, 0));
   }
 }
 
@@ -905,6 +899,8 @@ void LongDribbleEvent::_process(const World &w, bool ball_z_valid, float ball_z)
 
       if (dist(r.loc, d.start_loc) > 1000) {
         fired = true;
+        vars.cmd = teamCommand(BALL_PLACEMENT, FlipTeam(r.robot_id.team));
+        vars.next_cmd = teamCommand(INDIRECT_FREE, FlipTeam(r.robot_id.team));
         setDescription("Ball dribbled too far by robot %s-%X", TeamName(r.robot_id.team), r.robot_id.id);
 
         autoref_msg_valid = true;

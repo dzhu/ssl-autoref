@@ -49,6 +49,8 @@ struct AutorefVariables
 
   int8_t blue_side;
 
+  vector2f designated_point;
+
   uint32_t games_played;
   struct TeamInfo
   {
@@ -73,6 +75,7 @@ struct AutorefVariables
         kick_deadline(0),
         touch_time(0),
         blue_side(0),
+        designated_point(0, 0),
         games_played(0)
   {
   }
@@ -133,10 +136,10 @@ protected:
     orig->set_botid(offending_robot.id);
   }
 
-  void setDesignatedPoint(vector2f designated_point)
+  void setDesignatedPoint(vector2f p)
   {
-    // autoref_msg.mutable_foul()->mutable_designated_point()->set_x(designated_point.x);
-    // autoref_msg.mutable_foul()->mutable_designated_point()->set_y(designated_point.y);
+    vars.reset = true;
+    vars.reset_loc = vars.designated_point = p;
   }
 
 public:
