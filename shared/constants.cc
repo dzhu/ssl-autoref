@@ -61,7 +61,7 @@ void Constants::initDivisionB()
   DefenseWidthH = 1000;
 }
 
-void Constants::updateGeometry(SSL_GeometryData &g)
+void Constants::updateGeometry(const SSL_GeometryData &g)
 {
   auto f = g.field();
 

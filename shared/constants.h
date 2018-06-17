@@ -39,7 +39,7 @@ public:
   static void initCommon();
   static void initDivisionA();
   static void initDivisionB();
-  static void updateGeometry(SSL_GeometryData &g);
+  static void updateGeometry(const SSL_GeometryData &g);
 };
 
 enum Team : int

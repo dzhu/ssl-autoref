@@ -21,15 +21,19 @@ enum OptionIndex
   HELP,
   VERBOSE,
   FULL,
-  REMOTE,
+  PASSIVE,
+  DIVB,
+  NOCONSENSUS,
 };
 
 const option::Descriptor options[] = {
-  {UNKNOWN, 0, "", "", option::Arg::None, "An automatic referee for the SSL."},             //
-  {HELP, 0, "h", "help", option::Arg::None, "-h, --help: print help"},                      //
-  {VERBOSE, 0, "v", "verbose", option::Arg::None, "-v: verbose"},                           //
-  {FULL, 0, "f", "full", option::Arg::None, "--full: run using full game logic"},           //
-  {REMOTE, 0, "r", "remote", option::Arg::None, "--remote: send refbox control messages"},  //
+  {UNKNOWN, 0, "", "", option::Arg::None, "An automatic referee for the SSL."},  //
+  {HELP, 0, "h", "help", option::Arg::None, "-h, --help: print help"},           //
+  {VERBOSE, 0, "v", "verbose", option::Arg::None, "-v: verbose"},                //
+  // {FULL, 0, "f", "full", option::Arg::None, "--full: run using full game logic"},              //
+  {PASSIVE, 0, "p", "passive", option::Arg::None, "-p, --passive: don't send refbox control messages"},
+  {DIVB, 0, "b", "divb", option::Arg::None, "-b, --divb: set to division B (default A)"},
+  {NOCONSENSUS, 0, "n", "nocon", option::Arg::None, "-n, --nocon: send to refbox instead of consensus"},
   {0, 0, nullptr, nullptr, nullptr, nullptr},
 };
 
@@ -59,11 +63,11 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
-  bool use_rcon = args[REMOTE] != nullptr;
+  bool passive = args[PASSIVE] != nullptr;
   RemoteClient rcon;
   bool rcon_opened = false;
-  if (use_rcon) {
-    if (rcon.open("localhost", 10007)) {
+  if (!passive) {
+    if (rcon.open("localhost", args[NOCONSENSUS] ? 10007 : 10008)) {
       puts("Remote client opened!");
       rcon_opened = true;
     }
@@ -81,6 +85,13 @@ int main(int argc, char *argv[])
   else {
     puts("Starting evaluation autoref.");
     autoref = new EvaluationAutoref(verbose);
+  }
+
+  if (args[DIVB]) {
+    Constants::initDivisionB();
+  }
+  else {
+    Constants::initDivisionA();
   }
 
   Address autoref_addr(AutorefGroup, AutorefPort);
@@ -122,6 +133,7 @@ int main(int argc, char *argv[])
         }
       }
       if (vision_msg.has_geometry()) {
+        Constants::updateGeometry(vision_msg.geometry());
         autoref->updateGeometry(vision_msg.geometry());
       }
     }
