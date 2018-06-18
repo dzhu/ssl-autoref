@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
   RemoteClient rcon;
   bool rcon_opened = false;
   if (!passive) {
-    if (rcon.open("localhost", args[NOCONSENSUS] ? 10007 : 10008)) {
+    if (rcon.open("localhost", args[NOCONSENSUS] ? RefboxPort : ConsensusPort)) {
       puts("Remote client opened!");
       rcon_opened = true;
     }
@@ -93,8 +93,6 @@ int main(int argc, char *argv[])
   else {
     Constants::initDivisionA();
   }
-
-  Address autoref_addr(AutorefGroup, AutorefPort);
 
   SSL_WrapperPacket vision_msg;
   SSL_Referee ref_msg;

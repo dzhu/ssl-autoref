@@ -30,8 +30,8 @@ static const int VisionPort = 10006 + PORT_OFFSET;
 static const char *RefGroup = "224.5.23.1";
 static const int RefPort = 10003 + PORT_OFFSET;
 
-static const char *AutorefGroup = "224.5.23.3";
-static const int AutorefPort = 10008 + PORT_OFFSET;
+static const int RefboxPort = 10007 + PORT_OFFSET;
+static const int ConsensusPort = 10008 + PORT_OFFSET;
 
 class Address
 {
