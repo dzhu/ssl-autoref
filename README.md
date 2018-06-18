@@ -13,7 +13,7 @@ command packets, only refbox remote control requests.
 
 The autoref executable also takes the following arguments:
 
-- `-p, --passive`: don't try sending remote control commands at all
+- `-a, --active`: send remote control commands by default
 - `-b, --divb`: run for division B instead of division A
 - `-n, --nocon`: send directly to the refbox (port 10007) instead of the consensus program (10008)
 

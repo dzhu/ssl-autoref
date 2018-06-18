@@ -25,7 +25,7 @@ void BaseAutoref::updateVision(const SSL_DetectionFrame &d)
 {
   tracker.updateVision(d);
   World w;
-  if (tracker.getWorld(w)) {
+  if (have_geometry && tracker.getWorld(w)) {
     doEvents(w);
   }
   else {

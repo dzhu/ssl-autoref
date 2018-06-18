@@ -21,7 +21,7 @@ enum OptionIndex
   HELP,
   VERBOSE,
   FULL,
-  PASSIVE,
+  ACTIVE,
   DIVB,
   NOCONSENSUS,
 };
@@ -31,7 +31,7 @@ const option::Descriptor options[] = {
   {HELP, 0, "h", "help", option::Arg::None, "-h, --help: print help"},           //
   {VERBOSE, 0, "v", "verbose", option::Arg::None, "-v: verbose"},                //
   // {FULL, 0, "f", "full", option::Arg::None, "--full: run using full game logic"},              //
-  {PASSIVE, 0, "p", "passive", option::Arg::None, "-p, --passive: don't send refbox control messages"},
+  {ACTIVE, 0, "a", "active", option::Arg::None, "-a, --active: send refbox control messages by default"},
   {DIVB, 0, "b", "divb", option::Arg::None, "-b, --divb: set to division B (default A)"},
   {NOCONSENSUS, 0, "n", "nocon", option::Arg::None, "-n, --nocon: send to refbox instead of consensus"},
   {0, 0, nullptr, nullptr, nullptr, nullptr},
@@ -63,17 +63,16 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
-  bool passive = args[PASSIVE] != nullptr;
+  bool active = args[ACTIVE] != nullptr;
   RemoteClient rcon;
   bool rcon_opened = false;
-  if (!passive) {
-    if (rcon.open("localhost", args[NOCONSENSUS] ? RefboxPort : ConsensusPort)) {
-      puts("Remote client opened!");
-      rcon_opened = true;
-    }
-    else {
-      puts("Remote client port open failed!");
-    }
+
+  if (rcon.open("localhost", args[NOCONSENSUS] ? RefboxPort : ConsensusPort)) {
+    puts("Remote client opened!");
+    rcon_opened = true;
+  }
+  else {
+    puts("Remote client port open failed!");
   }
 
   bool verbose = (args[VERBOSE] != nullptr);
@@ -103,11 +102,16 @@ int main(int argc, char *argv[])
   bool got_vision = false, got_ref = false;
 
   puts("\nWaiting for network packets...");
+  printf("\n\n\n\n\x1b[35;1mAutoref is now %s. Press enter to toggle.\x1b[m\n", active ? "ACTIVE" : "PASSIVE");
+
+  int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+  fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
 
   while (true) {
     FD_ZERO(&read_fds);
     FD_SET(vision_net.getFd(), &read_fds);
     FD_SET(ref_net.getFd(), &read_fds);
+    FD_SET(STDIN_FILENO, &read_fds);
     select(n_fds, &read_fds, nullptr, nullptr, nullptr);
 
     if (FD_ISSET(vision_net.getFd(), &read_fds) && vision_net.recv(vision_msg)) {
@@ -125,7 +129,7 @@ int main(int argc, char *argv[])
         // }
 
         if (autoref->isRemoteReady()) {
-          if (rcon_opened) {
+          if (active && rcon_opened) {
             rcon.sendRequest(autoref->makeRemote());
           }
         }
@@ -141,6 +145,13 @@ int main(int argc, char *argv[])
         puts("Got ref packet!");
       }
       autoref->updateReferee(ref_msg);
+    }
+    if (FD_ISSET(STDIN_FILENO, &read_fds)) {
+      active = !active;
+      printf("\x1b[35;1mAutoref is now %s. Press enter to toggle.\x1b[m\n", active ? "ACTIVE" : "PASSIVE");
+      char buf[100];
+      while (read(STDIN_FILENO, buf, sizeof(buf)) > 0) {
+      }
     }
   }
 }
